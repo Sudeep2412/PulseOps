@@ -72,3 +72,6 @@ aws iam get-role-policy --role-name github-actions-pulseops-ecr --policy-name Pu
 1. **GitHub OIDC Token Claims**: The `token.actions.githubusercontent.com:sub` claim follows the exact format `repo:<owner>/<repo>:ref:refs/heads/<branch>`. Using `StringLike` with `repo:Sudeep2412/PulseOps:ref:refs/heads/main` ensures pull requests or non-main branches cannot assume the publishing role.
 2. **Job-Level Token Permissions**: Always isolate `permissions: id-token: write` strictly to the publishing job (`ecr-publish`), keeping root-level workflow permissions at `permissions: contents: read`.
 3. **AdministratorAccess Security Finding**: The existing EC2 instance role (`instanceRoleproj`) has `AdministratorAccess` attached from manual launch. This is tracked as a security risk in `PROJECT_STATUS.md` and will be replaced with a least-privilege IAM profile in Phase 5.
+
+4. **GitHub OIDC CA Thumbprint Rotation**:
+   - 	oken.actions.githubusercontent.com active TLS certificate fingerprint is 

@@ -56,3 +56,4 @@ This document outlines the engineering standards, workflows, and deployment proc
 ????????? monitoring/               # Prometheus, Grafana, Alertmanager (Planned - Phase 7)
 ????????? security/                 # Trivy & Gitleaks configurations
 ```
+<!-- oidc-thumbprint-updated -->
