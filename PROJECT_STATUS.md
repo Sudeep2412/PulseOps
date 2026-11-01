@@ -13,8 +13,8 @@ This document provides a single source of truth for the implementation status of
 | **Phase 1** | Application Development (Workload Engine) | **Completed** | Nov 2026 | Modular Flask app, SRE metrics, health endpoints, 95% test coverage |
 | **Phase 2** | Containerization (Docker & Compose) | **Completed** | Nov 2026 | Multi-stage Dockerfile, non-root UID 10001, compose stack, 255MB image |
 | **Phase 3** | CI Pipeline (GitHub Actions & Security Scans) | **Completed** | Nov 2026 | Automated pytest, Docker Buildx, Gitleaks, Trivy, pip-audit |
-| **Phase 4** | AWS & ECR Integration | **Planned** | Pending Approval | ECR repository, GitHub OIDC IAM role, image tagging |
-| **Phase 5** | Infrastructure as Code (Terraform on AWS) | **Planned** | Upcoming | VPC, Security Groups, IAM, CloudWatch, ECR |
+| **Phase 4** | AWS & ECR Integration (OIDC) | **Completed** | Nov 2026 | Keyless GitHub OIDC, ECR repo `pulseops-app`, SHA & latest tagging |
+| **Phase 5** | Infrastructure as Code (Terraform on AWS) | **Planned** | Pending Approval | VPC, Security Groups, IAM, CloudWatch, ECR |
 | **Phase 6** | Continuous Deployment & Rollback | **Planned** | Upcoming | Idempotent CD script, smoke tests, automatic rollback |
 | **Phase 7** | Observability (Prometheus, Grafana, Exporters) | **Planned** | Upcoming | Prometheus scraping, Grafana dashboards, cAdvisor, Node Exporter |
 | **Phase 8** | SRE Golden Signals, SLOs & Incident Simulation | **Planned** | Upcoming | Latency/Traffic/Errors/Saturation, Alertmanager rules, MTTR drill |
@@ -66,15 +66,29 @@ This document provides a single source of truth for the implementation status of
 - [x] GitHub Actions workflow `.github/workflows/ci.yml` created with least-privilege permissions (`contents: read`).
 - [x] Application test job: Python 3.12 runner, dependency caching, Pytest suite execution, coverage threshold enforcement (`--cov-fail-under=85`).
 - [x] Docker build validation job: Buildx execution, build verification without registry push, non-root user verification (`id 10001`).
-- [x] Security scanning job:
-  - Gitleaks secret detection across entire commit history.
-  - Trivy filesystem vulnerability and misconfiguration scanning.
-  - `pip-audit` Python package vulnerability scanning.
-- [x] Workflow triggers on push to `main`, pull request to `main`, and manual `workflow_dispatch`.
+- [x] Security scanning job: Gitleaks secret detection, Trivy filesystem scan (`v0.36.0`), and `pip-audit` dependency vulnerability scanning.
+
+### Phase 4: AWS ECR & GitHub OIDC Integration (Completed)
+- [x] Dedicated AWS IAM OIDC identity provider created for `token.actions.githubusercontent.com`.
+- [x] Least-privilege IAM role `github-actions-pulseops-ecr` created with strict trust policy restricted to `repo:Sudeep2412/PulseOps:ref:refs/heads/main` and `aud: sts.amazonaws.com`.
+- [x] Inline policy `PulseOpsECRPublishPolicy` attached granting only necessary ECR authentication and image push operations to `pulseops-app`.
+- [x] Amazon ECR repository `pulseops-app` created in `us-east-1` with `scanOnPush=true` and AES256 encryption.
+- [x] Lifecycle retention policy applied to expire images beyond the last 10 versions.
+- [x] CI/CD workflow extended with `ecr-publish` job:
+  - Requires all CI checks to pass (`needs: [test, docker-build, security-scan]`).
+  - Gated to push events on `main` branch (`if: github.event_name == 'push' && github.ref == 'refs/heads/main'`).
+  - Scoped `id-token: write` permission only to the publishing job.
+  - Image tagged with immutable Git commit SHA `${{ github.sha }}` and `latest`.
 
 ---
 
-## Governance & Operational Constraints
-- **Zero Static Credentials**: All AWS interactions strictly use IAM instance roles / OIDC.
-- **Strict Git Hygiene**: Never force push to `main`; all secrets and state files strictly ignored via `.gitignore`.
-- **Accurate Status Representation**: Planned features are documented as planned and never marked complete until tested and merged.
+## Known Security Risks & Observations
+
+> [!WARNING]
+> **Security Risk Finding: Existing EC2 Role (`instanceRoleproj`) has `AdministratorAccess`**
+> - **Observation**: The pre-existing EC2 instance profile `instanceRoleproj` currently has the AWS-managed policy `AdministratorAccess` attached.
+> - **Risk Assessment**: While convenient for bootstrap development, attaching full administrative access to an EC2 instance violates the principle of least privilege. A compromise of the host could theoretically lead to broader AWS account compromise.
+> - **Mitigation & Plan**:
+>   1. Do **not** expand `instanceRoleproj` permissions.
+>   2. New automation (such as GitHub Actions) uses strictly scoped least-privilege roles (`github-actions-pulseops-ecr`) with no administrative access.
+>   3. In Phase 5 (Terraform), we will formally design a least-privilege EC2 role scoped strictly to CloudWatch logs, SSM, and ECR pull permissions, replacing `AdministratorAccess`.
