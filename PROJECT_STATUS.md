@@ -70,7 +70,7 @@ This document provides a single source of truth for the implementation status of
 
 ### Phase 4: AWS ECR & GitHub OIDC Integration (Completed)
 - [x] Dedicated AWS IAM OIDC identity provider created for `token.actions.githubusercontent.com`.
-- [x] Least-privilege IAM role `github-actions-pulseops-ecr` created with strict trust policy restricted to `repo:Sudeep2412/PulseOps:ref:refs/heads/main` and `aud: sts.amazonaws.com`.
+- [x] Least-privilege IAM role `github-actions-pulseops-ecr` created with strict trust policy restricted to `repo:Sudeep2412@143870213/PulseOps@1441664918:ref:refs/heads/main` and `aud: sts.amazonaws.com`.
 - [x] Inline policy `PulseOpsECRPublishPolicy` attached granting only necessary ECR authentication and image push operations to `pulseops-app`.
 - [x] Amazon ECR repository `pulseops-app` created in `us-east-1` with `scanOnPush=true` and AES256 encryption.
 - [x] Lifecycle retention policy applied to expire images beyond the last 10 versions.
@@ -78,7 +78,10 @@ This document provides a single source of truth for the implementation status of
   - Requires all CI checks to pass (`needs: [test, docker-build, security-scan]`).
   - Gated to push events on `main` branch (`if: github.event_name == 'push' && github.ref == 'refs/heads/main'`).
   - Scoped `id-token: write` permission only to the publishing job.
-  - Image tagged with immutable Git commit SHA `${{ github.sha }}` and `latest`.
+  - Image tagged with immutable Git commit SHA and `latest`.
+- [x] Live end-to-end CI/CD verification succeeded on GitHub Actions Run [41301187690](https://github.com/Sudeep2412/PulseOps/actions/runs/41301187690).
+- [x] Amazon ECR image verified published: digest `sha256:12ff987427ae81b47ab69c144f6c5b986a7214e26398da8f9d67f79806cbf456`, tags `f3ba9a38c60be200f24c82cee528fef7bd33e9e0` and `latest`.
+- [x] ECR automated vulnerability scan verified: status `COMPLETE`, 0 CRITICAL vulnerabilities.
 
 ---
 
