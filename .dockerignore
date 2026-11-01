@@ -1,0 +1,44 @@
+# Version control & CI
+.git
+.gitignore
+.github
+
+# Keys & Secrets
+*.pem
+*.key
+*.cert
+credentials
+*.credentials
+.env
+.env.*
+!.env.example
+
+# Terraform & Cloud State
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Python cache & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+app-venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Documentation & non-runtime files
+docs/
+*.md
+Makefile
+deployment/docker-compose*.yml
+
+# Tests (excluded from production image)
+application/backend/tests/
+tests/

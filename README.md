@@ -2,7 +2,7 @@
 
 > Production-Grade Cloud-Native Site Reliability Engineering (SRE) & Observability Platform
 
-[![Status: Phase 0.5 In Progress](https://img.shields.io/badge/Status-Phase%200.5%20In%20Progress-blue.svg)](#current-implementation-status)
+[![Status: Phase 2 Containerization Completed](https://img.shields.io/badge/Status-Phase%202%20Completed-brightgreen.svg)](#current-implementation-status)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform: AWS](https://img.shields.io/badge/Platform-AWS%20EC2-orange.svg)](#infrastructure)
 [![OS: Ubuntu 26.04](https://img.shields.io/badge/OS-Ubuntu%2026.04%20LTS-E95420.svg)](#infrastructure)
@@ -154,6 +154,22 @@ make env-check
 
 # Inspect repository status
 make git-status
+```
+
+### Running with Docker Compose
+```bash
+# Build the production image
+make docker-build
+
+# Start the containerized service
+make docker-up
+
+# Inspect container health and logs
+docker compose -f deployment/docker-compose.yml ps
+make docker-logs
+
+# Stop container service
+make docker-down
 ```
 
 ---

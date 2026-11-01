@@ -10,6 +10,8 @@ PIP := $(VENV)/bin/pip
 PYTEST := $(VENV)/bin/pytest
 GUNICORN := $(VENV)/bin/gunicorn
 APP_DIR := application/backend
+DOCKER_IMAGE := pulseops-app:phase2
+COMPOSE_FILE := deployment/docker-compose.yml
 
 .PHONY: help
 help: ## Display this help message
@@ -36,9 +38,28 @@ test: ## Run unit and integration tests with coverage
 	@cd $(APP_DIR) && PYTHONPATH=. $(PYTEST) -v --cov=. --cov-report=term-missing
 
 .PHONY: run
-run: ## Run backend server with Gunicorn (port 8000)
+run: ## Run backend server locally with Gunicorn (port 8000)
 	@echo "Starting PulseOps Core Engine with Gunicorn on http://0.0.0.0:8000..."
 	@cd $(APP_DIR) && PYTHONPATH=. $(GUNICORN) --bind 0.0.0.0:8000 wsgi:app --workers 2
+
+.PHONY: docker-build
+docker-build: ## Build the hardened production Docker image
+	@echo "Building production Docker image: $(DOCKER_IMAGE)..."
+	@docker build -t $(DOCKER_IMAGE) -f deployment/Dockerfile .
+
+.PHONY: docker-up
+docker-up: ## Start application container via Docker Compose
+	@echo "Starting services via Docker Compose..."
+	@docker compose -f $(COMPOSE_FILE) up -d
+
+.PHONY: docker-down
+docker-down: ## Stop application container services
+	@echo "Stopping Docker Compose services..."
+	@docker compose -f $(COMPOSE_FILE) down
+
+.PHONY: docker-logs
+docker-logs: ## View application container logs
+	@docker compose -f $(COMPOSE_FILE) logs -f
 
 .PHONY: clean
 clean: ## Clean build artifacts, pycache, and temporary files
@@ -48,4 +69,3 @@ clean: ## Clean build artifacts, pycache, and temporary files
 	@find . -type f -name "*.pyo" -delete 2>/dev/null || true
 	@find . -type f -name ".coverage" -delete 2>/dev/null || true
 	@echo "Clean completed."
-

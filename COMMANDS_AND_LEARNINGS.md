@@ -18,82 +18,52 @@ This runbook documents operational procedures, reference commands, and architect
 
 ---
 
-## 2. Key Operational Commands
+## 2. Docker & Containerization Runbook (Phase 2)
 
-### Docker Management
+### Building the Production Container Image
 ```bash
-# Verify Docker service status
-systemctl status docker --no-pager
+# Build multi-stage hardened image
+docker build -t pulseops-app:phase2 -f deployment/Dockerfile .
 
-# Run Docker container without sudo
-docker run --rm hello-world
-
-# Inspect running containers
-docker ps -a
-
-# Check Docker Compose version
-docker compose version
+# Inspect image details and disk footprint
+docker images pulseops-app:phase2
 ```
 
-### HashiCorp Terraform
+### Running with Docker Compose
 ```bash
-# Check version
-terraform version
+# Start container in detached mode
+docker compose -f deployment/docker-compose.yml up -d
 
-# Validate Terraform formatting
-terraform fmt -check
+# Inspect running container and health status
+docker compose -f deployment/docker-compose.yml ps
+
+# Inspect container health transition
+docker inspect --format='{{.State.Health.Status}}' pulseops-core-app
+
+# Inspect live container logs
+docker compose -f deployment/docker-compose.yml logs -f
+
+# Check container resource usage (CPU/RAM)
+docker stats --no-stream pulseops-core-app
+
+# Stop and remove container services
+docker compose -f deployment/docker-compose.yml down
 ```
 
-### AWS CLI & IAM Authentication
+### Container Security Verification
 ```bash
-# Verify STS identity from EC2 instance profile
-aws sts get-caller-identity
+# Verify container executes as non-root user (UID 10001)
+docker run --rm pulseops-app:phase2 id
+# Output: uid=10001(pulseops) gid=10001(pulseops) groups=10001(pulseops)
 
-# Query EC2 Instance Metadata via IMDSv2
-TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 60")
-curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id
-```
-
-### Python Virtual Environment
-```bash
-# Activate isolated project virtual environment
-source /home/ubuntu/app-venv/bin/activate
-
-# Check installed packages
-pip list
+# Verify tests, secrets, and git metadata are absent
+docker run --rm pulseops-app:phase2 ls -la /app
 ```
 
 ---
 
-## 3. SSH Deploy Key & GitHub Workflow
+## 3. Key Learnings & Gotchas
 
-### Deploy Key Configuration
-- Key location: `~/.ssh/id_ed25519_pulseops`
-- Config file: `~/.ssh/config`
-```ssh-config
-Host github-pulseops
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/id_ed25519_pulseops
-    IdentitiesOnly yes
-```
-
-### Verification Command
-```bash
-ssh -T git@github-pulseops
-# Expected output:
-# Hi Sudeep2412/PulseOps! You've successfully authenticated, but GitHub does not provide shell access.
-```
-
-### Git Remote Configuration
-```bash
-git remote set-url origin git@github-pulseops:Sudeep2412/PulseOps.git
-```
-
----
-
-## 4. Key Learnings & Gotchas
-
-1. **Windows PEM Key Permissions**: When connecting from Windows OpenSSH, private keys require ACL restriction via `icacls.exe project.pem /inheritance:r /grant:r "$($env:USERNAME):(R)"`.
-2. **SSM Agent Registration**: The SSM Agent daemon requires the AWS managed policy `AmazonSSMManagedInstanceCore` attached to the EC2 instance profile (`instanceRoleproj`) to register with AWS Systems Manager.
-3. **Repository Scope**: GitHub Deploy Keys are scoped to a single repository, ensuring least privilege and preventing cross-repository contamination from the development server.
+1. **Python Multi-Stage Virtual Environments**: In a multi-stage Dockerfile, creating a self-contained virtual environment in `/opt/venv` during the builder stage and copying it into the runtime stage eliminates the need to compile build dependencies (e.g., `gcc`) in production, reducing attack surface and image size.
+2. **Localhost Binding for Security**: Docker Compose maps container port 8000 to `127.0.0.1:8000:8000` rather than `0.0.0.0:8000:8000`. This ensures internal testing does not inadvertently expose ports to the public internet via the EC2 security group.
+3. **Container Health Checking**: Gunicorn with `--workers 2` starts in ~1.5s, allowing a short `start_period: 5s` and `interval: 15s` in the Docker healthcheck configuration.
