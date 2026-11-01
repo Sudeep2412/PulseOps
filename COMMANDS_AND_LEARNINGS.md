@@ -62,8 +62,34 @@ docker run --rm pulseops-app:phase2 ls -la /app
 
 ---
 
-## 3. Key Learnings & Gotchas
+## 3. CI Pipeline & Security Scanning Runbook (Phase 3)
+
+### Local Security Scanning Commands
+```bash
+# Gitleaks secret detection across git history
+docker run --rm -v /home/ubuntu/PulseOps:/path zricethezav/gitleaks:latest detect --source="/path" --verbose
+
+# Trivy filesystem vulnerability and misconfiguration scan
+docker run --rm -v /home/ubuntu/PulseOps:/path aquasec/trivy:latest fs --severity HIGH,CRITICAL --scanners vuln,secret,misconfig /path
+
+# Python dependency vulnerability audit
+/home/ubuntu/app-venv/bin/pip-audit -r application/backend/requirements.txt
+```
+
+### Investigating GitHub Actions CI Runs
+```bash
+# Query recent workflow runs via GitHub API
+curl -s https://api.github.com/repos/Sudeep2412/PulseOps/actions/runs | jq '.workflow_runs[0] | {id, status, conclusion, html_url, event, head_sha}'
+
+# View jobs and step conclusions
+curl -s https://api.github.com/repos/Sudeep2412/PulseOps/actions/runs/<RUN_ID>/jobs | jq '.jobs[] | {name, status, conclusion, started_at, completed_at}'
+```
+
+---
+
+## 4. Key Learnings & Gotchas
 
 1. **Python Multi-Stage Virtual Environments**: In a multi-stage Dockerfile, creating a self-contained virtual environment in `/opt/venv` during the builder stage and copying it into the runtime stage eliminates the need to compile build dependencies (e.g., `gcc`) in production, reducing attack surface and image size.
 2. **Localhost Binding for Security**: Docker Compose maps container port 8000 to `127.0.0.1:8000:8000` rather than `0.0.0.0:8000:8000`. This ensures internal testing does not inadvertently expose ports to the public internet via the EC2 security group.
-3. **Container Health Checking**: Gunicorn with `--workers 2` starts in ~1.5s, allowing a short `start_period: 5s` and `interval: 15s` in the Docker healthcheck configuration.
+3. **Gitleaks Full History Requirement**: When running Gitleaks in GitHub Actions, set `fetch-depth: 0` in `actions/checkout` so the scanner can inspect all commits rather than just the shallow head commit.
+4. **Least Privilege CI Permissions**: Setting `permissions: contents: read` at the top level of `.github/workflows/ci.yml` prevents token abuse by compromised dependencies or actions.

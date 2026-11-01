@@ -12,8 +12,8 @@ This document provides a single source of truth for the implementation status of
 | **Phase 0.5** | GitHub Repository Initialization & Secure Authentication | **Completed** | Nov 2026 | Dedicated Ed25519 deploy key, repository scaffolding, foundational docs |
 | **Phase 1** | Application Development (Workload Engine) | **Completed** | Nov 2026 | Modular Flask app, SRE metrics, health endpoints, 95% test coverage |
 | **Phase 2** | Containerization (Docker & Compose) | **Completed** | Nov 2026 | Multi-stage Dockerfile, non-root UID 10001, compose stack, 255MB image |
-| **Phase 3** | CI Pipeline (GitHub Actions & Security Scans) | **Planned** | Pending Approval | Automated pytest, Trivy, Gitleaks, image builds |
-| **Phase 4** | AWS & ECR Integration | **Planned** | Upcoming | ECR repository, GitHub OIDC IAM role, image tagging |
+| **Phase 3** | CI Pipeline (GitHub Actions & Security Scans) | **Completed** | Nov 2026 | Automated pytest, Docker Buildx, Gitleaks, Trivy, pip-audit |
+| **Phase 4** | AWS & ECR Integration | **Planned** | Pending Approval | ECR repository, GitHub OIDC IAM role, image tagging |
 | **Phase 5** | Infrastructure as Code (Terraform on AWS) | **Planned** | Upcoming | VPC, Security Groups, IAM, CloudWatch, ECR |
 | **Phase 6** | Continuous Deployment & Rollback | **Planned** | Upcoming | Idempotent CD script, smoke tests, automatic rollback |
 | **Phase 7** | Observability (Prometheus, Grafana, Exporters) | **Planned** | Upcoming | Prometheus scraping, Grafana dashboards, cAdvisor, Node Exporter |
@@ -61,12 +61,16 @@ This document provides a single source of truth for the implementation status of
 - [x] Docker Compose specification (`deployment/docker-compose.yml`) with resource limits (`1.0 CPU`, `512MB RAM`), json-file log rotation, and bridge network.
 - [x] Container image built (`pulseops-app:phase2`, 255MB disk usage, 61.4MB content size).
 - [x] Verified running container: status `healthy`, RAM usage `75.77MiB` (~15%), CPU `0.01%`.
-- [x] Validated endpoints inside container (`/`, `/health`, `/ready`, `/api/v1/workload`, `/metrics`).
 
-### Phase 3: CI Pipeline (Planned)
-- [ ] GitHub Actions workflow for automated testing and linting.
-- [ ] Gitleaks secret scanning.
-- [ ] Trivy vulnerability scanning for filesystem and container images.
+### Phase 3: CI Pipeline & Automated Security (Completed)
+- [x] GitHub Actions workflow `.github/workflows/ci.yml` created with least-privilege permissions (`contents: read`).
+- [x] Application test job: Python 3.12 runner, dependency caching, Pytest suite execution, coverage threshold enforcement (`--cov-fail-under=85`).
+- [x] Docker build validation job: Buildx execution, build verification without registry push, non-root user verification (`id 10001`).
+- [x] Security scanning job:
+  - Gitleaks secret detection across entire commit history.
+  - Trivy filesystem vulnerability and misconfiguration scanning.
+  - `pip-audit` Python package vulnerability scanning.
+- [x] Workflow triggers on push to `main`, pull request to `main`, and manual `workflow_dispatch`.
 
 ---
 
