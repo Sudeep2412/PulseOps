@@ -141,6 +141,6 @@ jobs:
             --repository-name pulseops-app \
             --image-ids imageTag=${{ github.sha }} imageTag=latest \
             --region us-east-1 \
-            --query 'imageDetails[*].[imageTags, imagePushedAt, imageDigest]' \
+            --query "imageDetails[*].[imageDigest, imagePushedAt, join(',', imageTags)]" \
             --output table
 
