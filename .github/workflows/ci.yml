@@ -117,6 +117,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::512888109658:role/github-actions-pulseops-ecr
+          audience: sts.amazonaws.com
           aws-region: us-east-1
 
       - name: Log in to Amazon ECR
