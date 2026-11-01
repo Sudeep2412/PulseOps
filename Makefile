@@ -7,6 +7,9 @@ SHELL := /bin/bash
 VENV := /home/ubuntu/app-venv
 PYTHON := $(VENV)/bin/python
 PIP := $(VENV)/bin/pip
+PYTEST := $(VENV)/bin/pytest
+GUNICORN := $(VENV)/bin/gunicorn
+APP_DIR := application/backend
 
 .PHONY: help
 help: ## Display this help message
@@ -27,31 +30,22 @@ git-status: ## Show repository status and tracked branches
 	@echo "Remotes:"
 	@git remote -v
 
-.PHONY: lint
-lint: ## Run code linters and formatting checks (Planned)
-	@echo "Running linters..."
-	@echo "Linters will be configured in Phase 1."
-
 .PHONY: test
-test: ## Run unit and integration tests (Planned)
-	@echo "Running test suite..."
-	@echo "Test suite will be configured in Phase 1."
+test: ## Run unit and integration tests with coverage
+	@echo "Running backend test suite with coverage..."
+	@cd $(APP_DIR) && PYTHONPATH=. $(PYTEST) -v --cov=. --cov-report=term-missing
 
-.PHONY: docker-build
-docker-build: ## Build application Docker image (Planned)
-	@echo "Docker build target will be implemented in Phase 1."
-
-.PHONY: docker-up
-docker-up: ## Start container services via Docker Compose (Planned)
-	@echo "Docker Compose services will be configured in Phase 1."
-
-.PHONY: docker-down
-docker-down: ## Stop container services (Planned)
-	@echo "Stopping container services..."
+.PHONY: run
+run: ## Run backend server with Gunicorn (port 8000)
+	@echo "Starting PulseOps Core Engine with Gunicorn on http://0.0.0.0:8000..."
+	@cd $(APP_DIR) && PYTHONPATH=. $(GUNICORN) --bind 0.0.0.0:8000 wsgi:app --workers 2
 
 .PHONY: clean
 clean: ## Clean build artifacts, pycache, and temporary files
 	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
 	@find . -type f -name "*.pyc" -delete 2>/dev/null || true
 	@find . -type f -name "*.pyo" -delete 2>/dev/null || true
+	@find . -type f -name ".coverage" -delete 2>/dev/null || true
 	@echo "Clean completed."
+
