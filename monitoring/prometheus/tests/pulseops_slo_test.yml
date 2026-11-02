@@ -1,0 +1,199 @@
+rule_files:
+  - /etc/prometheus/rules/pulseops_slo_rules.yml
+  - /etc/prometheus/rules/pulseops_error_budget.yml
+
+evaluation_interval: 1m
+
+tests:
+  # Test Vector 1: 100% Success Traffic (No Errors)
+  - interval: 1m
+    input_series:
+      - series: 'pulseops_http_requests_total{endpoint="api.workload",status="200"}'
+        values: '0+10x10'
+      - series: 'pulseops_http_requests_total{endpoint="health.health",status="200"}'
+        values: '0+4x10'
+      - series: 'pulseops_http_request_duration_seconds_bucket{endpoint="api.workload",le="0.5"}'
+        values: '0+10x10'
+      - series: 'pulseops_http_request_duration_seconds_count{endpoint="api.workload"}'
+        values: '0+10x10'
+    promql_expr_test:
+      - expr: pulseops:sli_availability:ratio_rate5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:sli_availability:ratio_rate5m{}'
+            value: 1.0
+      - expr: pulseops:sli_error_rate:ratio_rate5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:sli_error_rate:ratio_rate5m{}'
+            value: 0.0
+      - expr: pulseops:sli_latency_under_500ms:ratio_rate5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:sli_latency_under_500ms:ratio_rate5m{}'
+            value: 1.0
+      - expr: pulseops:error_budget_consumed:percent_5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:error_budget_consumed:percent_5m{}'
+            value: 0.0
+      - expr: pulseops:error_budget_remaining:percent_5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:error_budget_remaining:percent_5m{}'
+            value: 100.0
+      - expr: pulseops:error_budget_burn_rate:5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:error_budget_burn_rate:5m{}'
+            value: 0.0
+
+  # Test Vector 2: 99.5% Success (0.5% errors -> Exact SLO Target Boundary)
+  - interval: 1m
+    input_series:
+      - series: 'pulseops_http_requests_total{endpoint="api.workload",status="200"}'
+        values: '0+199x10'
+      - series: 'pulseops_http_requests_total{endpoint="api.workload",status="500"}'
+        values: '0+1x10'
+      - series: 'pulseops_http_errors_total{endpoint="api.workload",status="500"}'
+        values: '0+1x10'
+    promql_expr_test:
+      - expr: pulseops:sli_availability:ratio_rate5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:sli_availability:ratio_rate5m{}'
+            value: 0.995
+      - expr: pulseops:sli_error_rate:ratio_rate5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:sli_error_rate:ratio_rate5m{}'
+            value: 0.005
+      - expr: pulseops:error_budget_consumed:percent_5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:error_budget_consumed:percent_5m{}'
+            value: 100.0
+      - expr: pulseops:error_budget_remaining:percent_5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:error_budget_remaining:percent_5m{}'
+            value: 0.0
+      - expr: pulseops:error_budget_burn_rate:5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:error_budget_burn_rate:5m{}'
+            value: 1.0
+
+  # Test Vector 3: 99% Success (1% errors -> 200% budget consumed, 2.0x burn rate)
+  - interval: 1m
+    input_series:
+      - series: 'pulseops_http_requests_total{endpoint="api.workload",status="200"}'
+        values: '0+99x10'
+      - series: 'pulseops_http_requests_total{endpoint="api.workload",status="500"}'
+        values: '0+1x10'
+      - series: 'pulseops_http_errors_total{endpoint="api.workload",status="500"}'
+        values: '0+1x10'
+    promql_expr_test:
+      - expr: pulseops:sli_availability:ratio_rate5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:sli_availability:ratio_rate5m{}'
+            value: 0.99
+      - expr: pulseops:sli_error_rate:ratio_rate5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:sli_error_rate:ratio_rate5m{}'
+            value: 0.01
+      - expr: pulseops:error_budget_consumed:percent_5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:error_budget_consumed:percent_5m{}'
+            value: 200.0
+      - expr: pulseops:error_budget_remaining:percent_5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:error_budget_remaining:percent_5m{}'
+            value: 0.0
+      - expr: pulseops:error_budget_burn_rate:5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:error_budget_burn_rate:5m{}'
+            value: 2.0
+
+  # Test Vector 4: 95% Success (5% errors -> 10.0x burn rate)
+  - interval: 1m
+    input_series:
+      - series: 'pulseops_http_requests_total{endpoint="api.workload",status="200"}'
+        values: '0+95x10'
+      - series: 'pulseops_http_requests_total{endpoint="api.workload",status="500"}'
+        values: '0+5x10'
+      - series: 'pulseops_http_errors_total{endpoint="api.workload",status="500"}'
+        values: '0+5x10'
+    promql_expr_test:
+      - expr: pulseops:sli_availability:ratio_rate5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:sli_availability:ratio_rate5m{}'
+            value: 0.9500000000000001
+      - expr: pulseops:sli_error_rate:ratio_rate5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:sli_error_rate:ratio_rate5m{}'
+            value: 0.05
+      - expr: pulseops:error_budget_burn_rate:5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:error_budget_burn_rate:5m{}'
+            value: 10.0
+
+  # Test Vector 5: 0% Success (100% 500 errors -> Critical Alert Triggered)
+  - interval: 1m
+    input_series:
+      - series: 'pulseops_http_requests_total{endpoint="api.simulate_error",status="500"}'
+        values: '0+50x10'
+      - series: 'pulseops_http_errors_total{endpoint="api.simulate_error",status="500"}'
+        values: '0+50x10'
+    promql_expr_test:
+      - expr: pulseops:sli_availability:ratio_rate5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:sli_availability:ratio_rate5m{}'
+            value: 0.0
+      - expr: pulseops:sli_error_rate:ratio_rate5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:sli_error_rate:ratio_rate5m{}'
+            value: 1.0
+      - expr: pulseops:error_budget_burn_rate:5m
+        eval_time: 5m
+        exp_samples:
+          - labels: 'pulseops:error_budget_burn_rate:5m{}'
+            value: 200.0
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: ErrorBudgetBurnRateFast
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              tier: sre
+            exp_annotations:
+              summary: 'Error budget burning rapidly (Burn Rate: 200.00x)'
+              description: 'Availability error budget is burning at 200.00x normal rate. 2% of budget consumed in 1 hour.'
+              remediation: 'Check application error logs, halt active deployments, inspect /api/v1/simulate-error endpoint.'
+
+  # Test Vector 6: Zero Traffic (Empty/Absent Traffic -> Explicit No Data, NOT false 100%!)
+  - interval: 1m
+    input_series: []
+    promql_expr_test:
+      - expr: pulseops:sli_availability:ratio_rate5m
+        eval_time: 5m
+        exp_samples: []
+      - expr: pulseops:sli_error_rate:ratio_rate5m
+        eval_time: 5m
+        exp_samples: []
+      - expr: pulseops:error_budget_remaining:percent_5m
+        eval_time: 5m
+        exp_samples: []
+      - expr: pulseops:error_budget_burn_rate:5m
+        eval_time: 5m
+        exp_samples: []

@@ -59,13 +59,17 @@ jobs:
           pip install pip-audit
           pip-audit -r application/backend/requirements.txt
 
-      - name: Validate Observability Stack Configuration & Rules
+      - name: Validate Observability & SRE Configuration, Dashboards & Rules
         run: |
           docker compose -f monitoring/docker-compose.monitoring.yml config --quiet
           bash -n monitoring/manage_monitoring.sh
-          python3 -c "import json; [json.load(open(f)) for f in ['monitoring/grafana/dashboards/system_overview.json', 'monitoring/grafana/dashboards/application_performance.json', 'monitoring/grafana/dashboards/infrastructure_monitoring.json']]; print('Dashboards JSON valid')"
+          bash -n deployment/validate_sre.sh
+          python3 -c "import json, glob; [json.load(open(f)) for f in glob.glob('monitoring/grafana/dashboards/*.json')]; print('Dashboards JSON valid')"
           docker run --rm -v ${{ github.workspace }}/monitoring/prometheus:/etc/prometheus --entrypoint promtool prom/prometheus:v3.0.1 check config /etc/prometheus/prometheus.yml
           docker run --rm -v ${{ github.workspace }}/monitoring/prometheus/rules:/etc/prometheus/rules --entrypoint promtool prom/prometheus:v3.0.1 check rules /etc/prometheus/rules/pulseops_alerts.yml
+          docker run --rm -v ${{ github.workspace }}/monitoring/prometheus/rules:/etc/prometheus/rules --entrypoint promtool prom/prometheus:v3.0.1 check rules /etc/prometheus/rules/pulseops_slo_rules.yml
+          docker run --rm -v ${{ github.workspace }}/monitoring/prometheus/rules:/etc/prometheus/rules --entrypoint promtool prom/prometheus:v3.0.1 check rules /etc/prometheus/rules/pulseops_error_budget.yml
+          docker run --rm -v ${{ github.workspace }}/monitoring/prometheus:/etc/prometheus --entrypoint promtool prom/prometheus:v3.0.1 test rules /etc/prometheus/tests/pulseops_slo_test.yml
           docker run --rm -v ${{ github.workspace }}/monitoring/alertmanager:/etc/alertmanager --entrypoint amtool prom/alertmanager:v0.28.0 check-config /etc/alertmanager/alertmanager.yml
 
   container-build:

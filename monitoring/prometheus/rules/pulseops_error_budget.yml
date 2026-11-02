@@ -1,0 +1,50 @@
+groups:
+  - name: pulseops_error_budget_rules
+    interval: 30s
+    rules:
+      - record: pulseops:error_budget_consumed:percent_5m
+        expr: clamp_min((pulseops:sli_error_rate:ratio_rate5m / 0.005) * 100, 0)
+
+      - record: pulseops:error_budget_remaining:percent_5m
+        expr: clamp_max(clamp_min((1 - (pulseops:sli_error_rate:ratio_rate5m / 0.005)) * 100, 0), 100)
+
+      - record: pulseops:error_budget_burn_rate:5m
+        expr: clamp_min(pulseops:sli_error_rate:ratio_rate5m / 0.005, 0)
+
+      - record: pulseops:error_budget_burn_rate:1h
+        expr: clamp_min(( (sum(rate(pulseops_http_errors_total{endpoint!~"health\\..*|metrics\\..*",status=~"5.."}[1h])) or (0 * sum(rate(pulseops_http_requests_total{endpoint!~"health\\..*|metrics\\..*"}[1h])))) / sum(rate(pulseops_http_requests_total{endpoint!~"health\\..*|metrics\\..*"}[1h])) and (sum(rate(pulseops_http_requests_total{endpoint!~"health\\..*|metrics\\..*"}[1h])) > 0) ) / 0.005, 0)
+
+  - name: pulseops_error_budget_alerts
+    rules:
+      - alert: ErrorBudgetBurnRateFast
+        expr: pulseops:error_budget_burn_rate:5m > 14.4
+        for: 2m
+        labels:
+          severity: critical
+          tier: sre
+        annotations:
+          summary: 'Error budget burning rapidly (Burn Rate: {{ $value | printf "%.2f" }}x)'
+          description: 'Availability error budget is burning at {{ $value | printf "%.2f" }}x normal rate. 2% of budget consumed in 1 hour.'
+          remediation: 'Check application error logs, halt active deployments, inspect /api/v1/simulate-error endpoint.'
+
+      - alert: ErrorBudgetBurnRateSlow
+        expr: pulseops:error_budget_burn_rate:1h > 3.0
+        for: 15m
+        labels:
+          severity: warning
+          tier: sre
+        annotations:
+          summary: 'Error budget burning elevated (1h Burn Rate: {{ $value | printf "%.2f" }}x)'
+          description: 'Availability error budget is burning at {{ $value | printf "%.2f" }}x normal rate over 1 hour. 5% of budget consumed in 6 hours.'
+          remediation: 'Review recent errors, inspect error trends in SRE Reliability dashboard.'
+
+      - alert: ErrorBudgetDepleted
+        expr: pulseops:error_budget_remaining:percent_5m < 10
+        for: 5m
+        labels:
+          severity: warning
+          tier: sre
+        annotations:
+          summary: 'Error budget remaining is below 10% (current: {{ $value | printf "%.1f" }}%)'
+          description: 'Service has consumed over 90% of its availability error budget.'
+          remediation: 'Prioritize reliability tasks, halt risky changes until budget recovers.'

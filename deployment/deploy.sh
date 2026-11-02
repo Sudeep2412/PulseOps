@@ -180,6 +180,11 @@ rollback() {
     else
         echo "No verified rollback image available to roll back to (initial deployment or untagged baseline)."
     fi
+    DEPLOY_END_TIME=$(date +%s)
+    DEPLOY_DURATION=$((DEPLOY_END_TIME - DEPLOY_START_TIME))
+    if [ -f "${DEPLOY_DIR}/record_deployment.py" ]; then
+        python3 "${DEPLOY_DIR}/record_deployment.py" --status rollback --sha "${TARGET_TAG}" --duration "${DEPLOY_DURATION}" || true
+    fi
     exit 1
 }
 
@@ -224,6 +229,12 @@ fi
 # ------------------------------------------------------------------------------
 echo "Pruning dangling Docker images to preserve storage..."
 docker image prune -f --filter "dangling=true" || true
+
+DEPLOY_END_TIME=$(date +%s)
+DEPLOY_DURATION=$((DEPLOY_END_TIME - DEPLOY_START_TIME))
+if [ -f "${DEPLOY_DIR}/record_deployment.py" ]; then
+    python3 "${DEPLOY_DIR}/record_deployment.py" --status success --sha "${TARGET_TAG}" --duration "${DEPLOY_DURATION}" || true
+fi
 
 echo "========================================================================"
 echo "PulseOps Continuous Deployment: SUCCESSFUL"

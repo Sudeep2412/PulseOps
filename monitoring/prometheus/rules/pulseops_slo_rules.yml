@@ -1,0 +1,36 @@
+groups:
+  - name: pulseops_sli_slo_rules
+    interval: 30s
+    rules:
+      - record: pulseops:sli_eligible_requests:rate5m
+        expr: sum(rate(pulseops_http_requests_total{endpoint!~"health\\..*|metrics\\..*"}[5m]))
+
+      - record: pulseops:sli_successful_requests:rate5m
+        expr: sum(rate(pulseops_http_requests_total{endpoint!~"health\\..*|metrics\\..*",status=~"[23].."}[5m])) or (0 * sum(rate(pulseops_http_requests_total{endpoint!~"health\\..*|metrics\\..*"}[5m])))
+
+      - record: pulseops:sli_server_errors:rate5m
+        expr: sum(rate(pulseops_http_errors_total{endpoint!~"health\\..*|metrics\\..*",status=~"5.."}[5m])) or (0 * sum(rate(pulseops_http_requests_total{endpoint!~"health\\..*|metrics\\..*"}[5m])))
+
+      - record: pulseops:sli_availability:ratio_rate5m
+        expr: (pulseops:sli_successful_requests:rate5m / pulseops:sli_eligible_requests:rate5m) and (pulseops:sli_eligible_requests:rate5m > 0)
+
+      - record: pulseops:sli_availability:all_traffic_ratio_rate5m
+        expr: (sum(rate(pulseops_http_requests_total{status=~"[23].."}[5m])) / sum(rate(pulseops_http_requests_total[5m]))) and (sum(rate(pulseops_http_requests_total[5m])) > 0)
+
+      - record: pulseops:sli_error_rate:ratio_rate5m
+        expr: (pulseops:sli_server_errors:rate5m / pulseops:sli_eligible_requests:rate5m) and (pulseops:sli_eligible_requests:rate5m > 0)
+
+      - record: pulseops:sli_latency_under_500ms:ratio_rate5m
+        expr: ( (sum(rate(pulseops_http_request_duration_seconds_bucket{endpoint!~"health\\..*|metrics\\..*",le="0.5"}[5m])) or (0 * sum(rate(pulseops_http_request_duration_seconds_count{endpoint!~"health\\..*|metrics\\..*"}[5m])))) / sum(rate(pulseops_http_request_duration_seconds_count{endpoint!~"health\\..*|metrics\\..*"}[5m])) ) and (sum(rate(pulseops_http_request_duration_seconds_count{endpoint!~"health\\..*|metrics\\..*"}[5m])) > 0)
+
+      - record: pulseops:sli_latency_under_1s:ratio_rate5m
+        expr: ( (sum(rate(pulseops_http_request_duration_seconds_bucket{endpoint!~"health\\..*|metrics\\..*",le="1.0"}[5m])) or (0 * sum(rate(pulseops_http_request_duration_seconds_count{endpoint!~"health\\..*|metrics\\..*"}[5m])))) / sum(rate(pulseops_http_request_duration_seconds_count{endpoint!~"health\\..*|metrics\\..*"}[5m])) ) and (sum(rate(pulseops_http_request_duration_seconds_count{endpoint!~"health\\..*|metrics\\..*"}[5m])) > 0)
+
+      - record: pulseops:sli_p95_latency:seconds_5m
+        expr: histogram_quantile(0.95, sum(rate(pulseops_http_request_duration_seconds_bucket{endpoint!~"health\\..*|metrics\\..*"}[5m])) by (le)) and (sum(rate(pulseops_http_request_duration_seconds_count{endpoint!~"health\\..*|metrics\\..*"}[5m])) > 0)
+
+      - record: pulseops:sli_p99_latency:seconds_5m
+        expr: histogram_quantile(0.99, sum(rate(pulseops_http_request_duration_seconds_bucket{endpoint!~"health\\..*|metrics\\..*"}[5m])) by (le)) and (sum(rate(pulseops_http_request_duration_seconds_count{endpoint!~"health\\..*|metrics\\..*"}[5m])) > 0)
+
+      - record: pulseops:sli_deployment_success_rate:ratio
+        expr: pulseops_deployment_events_total{status="success"} / sum(pulseops_deployment_events_total)

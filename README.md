@@ -177,3 +177,46 @@ make docker-down
 ## License
 
 This project is licensed under the MIT License.
+
+---
+
+## Phase 7 & 8: SRE Engineering & Observability
+
+PulseOps incorporates a comprehensive, production-grade SRE framework and observability suite:
+
+### 1. Observability Architecture
+- **Prometheus (v3.0.1)**: Scrapes application telemetry, system metrics, and container metrics at 15s intervals with 15-day TSDB retention.
+- **Node Exporter (v1.8.2)**: Collects kernel, CPU, memory, filesystem, network, and disk I/O metrics from the host.
+- **cAdvisor (v0.49.2)**: Collects container CPU, memory working set, network RX/TX, and filesystem operations via containerd socket integration.
+- **Alertmanager (v0.28.0)**: Manages alerts, deduplication, grouping, and notification routing.
+- **Grafana (v11.4.0)**: Serves pre-provisioned dashboards with secure loopback access.
+
+### 2. Service Level Objectives (SLOs)
+| Objective | Target | Compliance Window | Indicator (SLI) |
+| :--- | :--- | :--- | :--- |
+| **Availability** | $\ge 99.5\%$ | Rolling 30 Days | Successful responses ($200-399$) / total requests |
+| **P95 Latency** | $\ge 95\%$ under $500$ms | Rolling 30 Days | % requests completed $\le 500$ms |
+| **P99 Latency** | $\ge 99\%$ under $1.0$s | Rolling 30 Days | % requests completed $\le 1.0$s |
+| **Deployment Success** | $\ge 95\%$ | Rolling 30 Days | Deployments verified without rollback |
+
+### 3. Error Budget & Burn Rate Governance
+- Allowable Error Budget: **0.5%** ($1.0 - 0.995$).
+- Multi-window burn rate alerts:
+  - **Critical Alert**: $14.4$x burn rate over 2m (consumes 2% of budget in 1 hour).
+  - **Warning Alert**: $3.0$x burn rate over 15m (consumes 5% of budget in 6 hours).
+- Automated Release Policy based on remaining budget state (`docs/sre/error_budget_policy.md`).
+
+### 4. Incident Runbooks & Management
+- Structured incident management (`docs/sre/incident_management.md`) across SEV-1, SEV-2, and SEV-3.
+- 11 production runbooks located in `docs/sre/runbooks/` with diagnostic commands, PromQL expressions, and mitigation steps.
+
+### 5. Secure Remote Access (Port Forwarding)
+All monitoring services are bound strictly to `127.0.0.1` for loopback security. Remote administrator access is achieved via secure SSH or AWS SSM port forwarding:
+
+```bash
+# Securely access Grafana UI locally at http://localhost:3000
+ssh -i project.pem -N -L 3000:127.0.0.1:3000 ubuntu@<EC2_PUBLIC_IP>
+
+# Securely access Prometheus UI locally at http://localhost:9090
+ssh -i project.pem -N -L 9090:127.0.0.1:9090 ubuntu@<EC2_PUBLIC_IP>
+```
