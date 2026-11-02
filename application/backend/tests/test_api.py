@@ -35,3 +35,37 @@ def test_system_info(client):
     assert "platform" in data
     assert "python_version" in data
     assert "cpu_count" in data
+
+def test_overview_endpoint(client):
+    response = client.get("/api/v1/overview")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["service"] == "PulseOps"
+    assert "platform_status" in data
+    assert "slis" in data
+    assert "deployments" in data
+
+def test_sre_status_endpoint(client):
+    response = client.get("/api/v1/sre/status")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert "slo_targets" in data
+    assert "error_budget" in data
+    assert "incident_metrics" in data
+    assert len(data["slo_targets"]) >= 3
+
+def test_infrastructure_endpoint(client):
+    response = client.get("/api/v1/infrastructure")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert "host" in data
+    assert "containers" in data
+    assert len(data["containers"]) >= 6
+
+def test_deployments_endpoint(client):
+    response = client.get("/api/v1/deployments")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert "current_commit_sha" in data
+    assert "deployment_history" in data
+    assert "rollback_baseline_available" in data

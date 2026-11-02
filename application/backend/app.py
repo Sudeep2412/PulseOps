@@ -72,6 +72,11 @@ def create_app(config_name: str = "default") -> Flask:
             }
         )
 
+        # CORS headers
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Request-ID"
+
         # Inject Request ID header
         response.headers["X-Request-ID"] = getattr(request, "request_id", "")
         return response

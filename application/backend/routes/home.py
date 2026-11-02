@@ -1,3 +1,5 @@
+import os
+from flask import current_app, send_from_directory
 from flask import Blueprint, jsonify, request, render_template_string
 from metrics import get_uptime_seconds
 
@@ -206,6 +208,10 @@ HOME_HTML_TEMPLATE = """<!DOCTYPE html>
 def index():
     uptime_sec = round(get_uptime_seconds(), 2)
     if "text/html" in request.headers.get("Accept", ""):
+        tpl_path = os.path.join(current_app.root_path, "templates", "index.html")
+        if os.path.exists(tpl_path):
+            with open(tpl_path, "r", encoding="utf-8") as f:
+                return f.read()
         return render_template_string(
             HOME_HTML_TEMPLATE,
             uptime=uptime_sec,
@@ -226,3 +232,8 @@ def index():
             "simulate_latency": "/api/v1/simulate-latency?delay=0.2"
         }
     }), 200
+
+@home_bp.route("/assets/<path:filename>")
+def serve_assets(filename):
+    assets_dir = os.path.join(current_app.root_path, "static", "assets")
+    return send_from_directory(assets_dir, filename)

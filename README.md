@@ -1,222 +1,212 @@
-# PulseOps
+# PulseOps: Enterprise CI/CD & SRE Observability Platform for AWS Workloads
 
-> Production-Grade Cloud-Native Site Reliability Engineering (SRE) & Observability Platform
+[![Build and Security Gates](https://github.com/Sudeep2412/PulseOps/actions/workflows/ci.yml/badge.svg)](https://github.com/Sudeep2412/PulseOps/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python: 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://python.org)
+[![React: 18.2](https://img.shields.io/badge/React-18.2-61DAFB?logo=react&logoColor=black)](https://react.dev)
+[![Docker: Multi--Stage](https://img.shields.io/badge/Docker-Multi--Stage-2496ED?logo=docker&logoColor=white)](https://docker.com)
+[![AWS: EC2+%20ECR+%20SSM](https://img.shields.io/badge/AWS-EC2%20|%20ECR%20|%20SSM-FF9900?logo=amazonaws&logoColor=white)](https://aws.amazon.com)
+[![Terraform: 1.5+](https://img.shields.io/badge/Terraform-1.5+-844FBA?logo=terraform&logoColor=white)](https://terraform.io)
+[![Prometheus: 2.51](https://img.shields.io/badge/Prometheus-v2.51-E6522C?logo=prometheus&logoColor=white)](https://prometheus.io)
+[![Grafana: 10.4](https://img.shields.io/badge/Grafana-v10.4-F46800?logo=grafana&logoColor=white)](https://grafana.com)
+[![Coverage: 93.8%](https://img.shields.io/badge/Coverage-93.8%25-brightgreen.svg)](docs/testing/test_results.md)
 
-[!\[Status: Phase 3 CI Pipeline Completed](https://img.shields.io/badge/Status-Phase%203%20Completed-brightgreen.svg)](#current-implementation-status)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Platform: AWS](https://img.shields.io/badge/Platform-AWS%20EC2-orange.svg)](#infrastructure)
-[![OS: Ubuntu 26.04](https://img.shields.io/badge/OS-Ubuntu%2026.04%20LTS-E95420.svg)](#infrastructure)
-
----
-
-## Abstract
-
-**PulseOps** is an end-to-end Site Reliability Engineering (SRE) and cloud observability platform designed to monitor, analyze, and maintain the health, reliability, and performance of distributed cloud workloads. Built on modern cloud infrastructure, PulseOps integrates continuous telemetry collection, service-level objective (SLO) tracking, proactive anomaly alerting, and automated recovery workflows to minimize Mean Time to Resolution (MTTR).
-
----
-
-## Problem Statement
-
-Modern distributed applications present significant operational challenges:
-- **Telemetry Fragmentation**: Metrics, distributed traces, and log streams reside in disconnected silos, making root-cause analysis slow and complex.
-- **Alert Fatigue & False Positives**: Static threshold alerts trigger excessive notifications without actionable context, obscuring critical production incidents.
-- **Lack of SRE Rigor**: Engineering teams struggle to quantify service reliability against customer impact without automated Four Golden Signals tracking and Error Budget accounting.
-- **Configuration & Infrastructure Drift**: Manual provisioning and disparate environments create inconsistencies between staging and production.
-
-PulseOps addresses these challenges by delivering an automated, observable, and immutable operations pipeline governed by SRE best practices.
+**PulseOps** is a production-engineered, cloud-native DevOps and Site Reliability Engineering (SRE) observability platform built for AWS workloads. It delivers automated keyless CI/CD, deterministic zero-downtime deployment orchestration with automated rollback, deep multi-tier observability (Prometheus, Grafana, Alertmanager, Node Exporter, cAdvisor), multi-window multi-burn-rate SLO alerting, an interactive React 18 dashboard, and a built-in Chaos/Fault Simulator.
 
 ---
 
-## Project Objectives
+## Platform Architecture
 
-1. **Holistic SRE Observability**: Implement continuous real-time instrumentation based on the Four Golden Signals (Latency, Traffic, Errors, Saturation).
-2. **Infrastructure as Code (IaC)**: Automate cloud infrastructure lifecycle management on AWS using Terraform to guarantee reproducible, zero-drift deployments.
-3. **Containerized Architecture**: Package application workloads into hardened, immutable Docker containers running with non-root security profiles.
-4. **Automated CI/CD Workflows**: Establish automated linting, security vulnerability scanning, and testing gates before deployment.
-5. **SLO & Error Budget Tracking**: Provide transparent dashboards and automated alerts tied directly to service availability targets.
+```mermaid
+graph TD
+    subgraph "CI/CD Pipeline (GitHub Actions)"
+        Push[Git Push Commit] --> Lint[Lint & Unit Tests: 17/17 Passed]
+        Lint --> Scan[Security Scan: Gitleaks & pip-audit]
+        Scan --> FrontTest[Frontend Tests: 4/4 Passed]
+        FrontTest --> OIDC[Keyless OIDC Auth: AWS STS]
+        OIDC --> BuildPush[Build & Push Immutable Docker Image: ECR]
+        BuildPush --> TriggerCD[Dispatch AWS SSM Command]
+    end
+
+    subgraph "AWS Cloud Infrastructure (us-east-1)"
+        EC2[AWS EC2 Instance: i-05e6553f01eb76141]
+        ECR[Amazon ECR: pulseops-app]
+        IAM[AWS IAM: github-actions-pulseops-ecr]
+
+        subgraph "Docker Bridge Network (pulseops-network)"
+            App[PulseOps Core App: Port 8000<br/>React 18 SPA + Flask Backend]
+            Prom[Prometheus TSDB: Port 9090]
+            Graf[Grafana: Port 3000]
+            AM[Alertmanager: Port 9093]
+            Node[Node Exporter: Port 9100]
+            cAdv[cAdvisor: Port 8080<br/>cgroups v2]
+        end
+    end
+
+    TriggerCD -->|AWS SSM RunCommand| EC2
+    EC2 -->|Pull Immutable SHA Image| ECR
+    App -->|Prometheus Client Telemetry| Prom
+    Node -->|Host CPU / Memory / Disk / Net| Prom
+    cAdv -->|Container Resource Metrics| Prom
+    Prom -->|Evaluate Rules & SLOs| AM
+    Prom -->|PromQL Datasource| Graf
+    App -->|Internal Telemetry Proxy| Prom
+```
+
+---
+
+## Key Features
+
+1. **Deterministic Zero-Downtime CD with Instant Rollback**:
+   - Automated deployment orchestration powered by AWS Systems Manager (SSM) without open SSH ports.
+   - Atomic deployment locking (`flock`) prevents concurrent execution collisions.
+   - Git worktree synchronization guarantees identical commit deployment.
+   - Pre-deployment baseline image tagging and independent health check verification (`/health`) with automatic fallback to previous immutable image.
+
+2. **Enterprise Observability & SRE Primitives**:
+   - Comprehensive implementation of Google SRE's **Four Golden Signals**: Latency, Traffic, Errors, and Saturation.
+   - Rigorous **Service Level Objectives (SLOs)**: 99.5% Availability over a 30-day rolling window with dynamic Error Budget calculation.
+   - Multi-window multi-burn-rate alerting policies (14.4x/6x burn rates) preventing alert fatigue while catching severe degradation.
+   - 10 production runbooks covering infrastructure, container, and application incident triage.
+
+3. **Modern Single-Page Dashboard (Phase 9)**:
+   - Built with React 18, Vite, TypeScript, and Tailwind CSS.
+   - Five responsive operational views:
+     - **Overview**: System health, active containers, Golden Signals, and alerts.
+     - **Application**: Real-time traffic simulator, transaction runner, and latency distributions.
+     - **Infrastructure**: Host CPU, RAM, Disk, Network I/O, and container cgroups v2 telemetry.
+     - **SRE & Reliability**: SLO status cards, remaining error budget gauges, and direct runbook directory.
+     - **Deployments**: Live CI/CD pipeline state, active commit SHA, deployment duration, and rollback metadata.
+   - **Interactive Chaos Simulator**: Inject controlled HTTP 500 errors, synthetic latency spikes, and workload surges to validate SRE alert propagation live.
+
+4. **Defense-in-Depth Security**:
+   - **Keyless Authentication**: GitHub Actions leverages OpenID Connect (OIDC) identity federation with AWS IAM. Zero long-lived AWS keys stored in GitHub Secrets.
+   - **Loopback Port Isolation**: All application and monitoring ports are strictly bound to `127.0.0.1`. Remote access is managed securely via AWS SSM Port Forwarding.
+   - **Automated Security Gates**: Gitleaks secret scanning and `pip-audit` CVE detection enforce zero vulnerabilities in CI.
+   - **Non-Root Execution**: Application container executes as an unprivileged user (`pulseops:pulseops`).
 
 ---
 
 ## Technology Stack
 
-| Domain | Technology | Details |
-| :--- | :--- | :--- |
-| **Cloud Provider** | Amazon Web Services (AWS) | EC2 (`m7i-flex.large`), VPC, IAM Instance Profiles, EBS NVMe |
-| **Operating System** | Ubuntu Linux | Ubuntu 26.04.1 LTS (`resolute`), Kernel 7.0 x86_64 |
-| **Containers & Runtime** | Docker & containerd | Docker Engine v29.9+, Docker Compose v5.6+ |
-| **Infrastructure as Code** | HashiCorp Terraform | Terraform v1.17+ with AWS Provider |
-| **Application Runtime** | Python | Python 3.14 (FastAPI asynchronous microservice framework) |
-| **Observability (Planned)** | Prometheus & Grafana | Pull-based metrics scraping, OpenTelemetry, Alertmanager |
-| **Version Control & CI/CD** | GitHub & GitHub Actions | Repository deploy-key authentication, automated pipelines |
+| Domain | Technologies |
+| :--- | :--- |
+| **Frontend UI** | React 18, Vite, TypeScript, Tailwind CSS, Lucide Icons |
+| **Backend API** | Python 3.12, Flask, Gunicorn, Prometheus Client, Marshmallow |
+| **Containerization** | Docker Engine, Docker Compose, Multi-Stage Dockerfile, cgroups v2 |
+| **Cloud Hosting** | AWS EC2 (`m7i-flex.large`, Ubuntu 26.04 LTS), Amazon ECR, AWS SSM, AWS STS |
+| **Infrastructure as Code** | HashiCorp Terraform 1.5+ (VPC, Subnets, ECR, IAM Roles, OIDC) |
+| **CI / CD** | GitHub Actions, Git Worktrees, Bash Orchestration, Flock Mutex |
+| **Observability** | Prometheus TSDB (v2.51), Grafana (v10.4), Alertmanager (v0.27), Node Exporter, cAdvisor |
+| **Testing & Quality** | Pytest, Pytest-Cov (93.76%), Node Test Runner, Promtool, ShellCheck |
 
 ---
 
-## Proposed Architecture
-
-```text
-       +-------------------------------------------------------------+
-       |                         Clients                             |
-       +-------------------------------------------------------------+
-                                      |
-                                      v
-       +-------------------------------------------------------------+
-       |                Edge / Reverse Proxy Ingress                 |
-       +-------------------------------------------------------------+
-                                      |
-                                      v
-       +-------------------------------------------------------------+
-       |                    PulseOps Core Service                    |
-       |                (Python 3.14 / FastAPI / OTLP)               |
-       |       /healthz       |       /readyz       |       /metrics |
-       +-------------------------------------------------------------+
-               |                                            |
-               v                                            v
-       +----------------+                          +-----------------+
-       |   Data Store   |                          | Telemetry Stack |
-       |  (PostgreSQL)  |                          | (OpenTelemetry) |
-       +----------------+                          +-----------------+
-                                                            |
-                                                            v
-                                                   +-----------------+
-                                                   |   Prometheus    |
-                                                   |    & Grafana    |
-                                                   +-----------------+
-```
-
----
-
-## CI/CD Lifecycle
-
-The envisioned delivery pipeline automates quality and security gates from commit to production:
-
-```text
-+------------------+     +-------------------+     +--------------------+
-| 1. Code & Commit | --> | 2. Static Analysis| --> | 3. Automated Tests |
-| (Git feature br) |     | (Linters, Security|     | (Unit, Integration)|
-+------------------+     +-------------------+     +--------------------+
-                                                             |
-                                                             v
-+------------------+     +-------------------+     +--------------------+
-| 6. Observability | <-- | 5. Deploy to AWS  | <-- | 4. Build Container |
-| (SLO Verification|     | (Terraform / CD)  |     | (Docker + Trivy)   |
-+------------------+     +-------------------+     +--------------------+
-```
-
----
-
-## Monitoring, Observability & SRE Golden Signals
-
-PulseOps monitors system health across the **Four Golden Signals**:
-
-1. **Latency**: Duration of request execution, monitored across percentiles (`p50`, `p90`, `p95`, `p99`) to catch tail-latency degradation.
-2. **Traffic**: Rate of inbound demand, quantified in requests per second (RPS) and concurrent active connections.
-3. **Errors**: Rate of failed requests, categorized into client errors (HTTP 4xx) and critical application failures (HTTP 5xx).
-4. **Saturation**: Utilization of underlying resources, identifying bottlenecks in CPU, memory, socket buffers, and disk I/O before failures occur.
-
----
-
-## Current Implementation Status
-
-> [!NOTE]
-> PulseOps is developed in structured phases. Components not yet implemented are clearly marked as planned.
-
-- [x] **Phase 0: Environment Preparation**
-  - EC2 Instance audited (Ubuntu 26.04.1 LTS, 2 vCPUs, 7.6 GiB RAM, 30 GB EBS).
-  - Docker Engine v29, Docker Compose v5, Terraform v1.17, AWS CLI v2 installed.
-  - Non-sudo Docker access configured and verified with `hello-world`.
-  - Isolated Python virtual environment established at `/home/ubuntu/app-venv`.
-- [x] **Phase 0.5: Repository Initialization & Security**
-  - SSH deploy key configured with repository scope.
-  - Foundational documentation, security rules, and build automation initialized.
-- [ ] **Phase 1: Application Architecture & Containerization** *(Planned)*
-- [ ] **Phase 2: Infrastructure as Code with Terraform** *(Planned)*
-- [ ] **Phase 3: SRE Observability Stack (Prometheus / Grafana)** *(Planned)*
-- [ ] **Phase 4: CI/CD Automation (GitHub Actions)** *(Planned)*
-- [ ] **Phase 5: Resilience Testing & Incident Management** *(Planned)*
-
----
-
-## Getting Started
+## Quickstart & Local Setup
 
 ### Prerequisites
-- SSH access to the PulseOps EC2 host with the configured deploy key.
-- Docker Engine & Compose v2.
-- Python 3.14 with virtual environment support.
+- Python 3.12+
+- Node.js 20+ & npm
+- Docker Engine & Docker Compose
 
-### Local Initialization
+### 1. Clone & Configure
 ```bash
-# Clone the repository using the configured SSH alias
-git clone git@github-pulseops:Sudeep2412/PulseOps.git
+git clone https://github.com/Sudeep2412/PulseOps.git
 cd PulseOps
-
-# Validate development environment
-make env-check
-
-# Inspect repository status
-make git-status
+cp .env.example .env
 ```
 
-### Running with Docker Compose
+### 2. Run Locally via Docker Compose
 ```bash
-# Build the production image
-make docker-build
+# Build and start application + complete observability stack
+docker compose up -d --build
 
-# Start the containerized service
-make docker-up
-
-# Inspect container health and logs
-docker compose -f deployment/docker-compose.yml ps
-make docker-logs
-
-# Stop container service
-make docker-down
+# Verify container status
+docker compose ps
 ```
+The platform will be accessible at:
+- **Application & Dashboard**: `http://localhost:8000`
+- **Prometheus TSDB**: `http://localhost:9090`
+- **Grafana Dashboards**: `http://localhost:3000` (Default credentials in `.env.monitoring`)
+- **Alertmanager**: `http://localhost:9093`
+
+### 3. Run Test Suites
+```bash
+# Backend unit & integration tests
+pytest application/backend/tests -v --cov=application/backend
+
+# Frontend test suite
+cd application/frontend && npm test
+
+# Prometheus alerting rule verification
+promtool check rules monitoring/prometheus/rules/*.yml
+promtool test rules monitoring/prometheus/tests/*.yml
+```
+
+---
+
+## Secure Remote Management via AWS SSM
+
+In accordance with enterprise zero-trust principles, PulseOps exposes no public inbound ports. To access live web dashboards on AWS:
+
+```bash
+# 1. Forward React Application / Flask REST API (Port 8000)
+aws ssm start-session \
+  --target i-05e6553f01eb76141 \
+  --document-name AWS-StartPortForwardingSession \
+  --parameters '{"portNumber":["8000"],"localPortNumber":["8000"]}'
+
+# 2. Forward Grafana Dashboards (Port 3000)
+aws ssm start-session \
+  --target i-05e6553f01eb76141 \
+  --document-name AWS-StartPortForwardingSession \
+  --parameters '{"portNumber":["3000"],"localPortNumber":["3000"]}'
+
+# 3. Forward Prometheus Query Engine (Port 9090)
+aws ssm start-session \
+  --target i-05e6553f01eb76141 \
+  --document-name AWS-StartPortForwardingSession \
+  --parameters '{"portNumber":["9090"],"localPortNumber":["9090"]}'
+```
+
+---
+
+## Comprehensive Documentation Library
+
+The complete project documentation is organized across 10 specialized domains:
+
+| Category | Primary Guide | Description |
+| :--- | :--- | :--- |
+| **System Architecture** | [Architecture Manual](docs/architecture/system_architecture.md) | High-level topology, data flows, and trust boundaries. |
+| **Getting Started** | [Installation & Setup](docs/getting-started/installation.md) | Local and cloud deployment setup guides. |
+| **CI/CD Pipeline** | [Continuous Deployment](docs/cicd/pipeline.md) | OIDC, SSM orchestration, and rollback logic. |
+| **Infrastructure as Code** | [Terraform Catalog](docs/infrastructure/terraform.md) | Declarative AWS infrastructure specifications. |
+| **Observability** | [Monitoring Guide](docs/observability/prometheus.md) | Prometheus TSDB, Grafana dashboards, and metrics catalog. |
+| **API Specification** | [REST API Docs](docs/api/endpoints.md) | Endpoint reference and OpenAPI 3.0 specification. |
+| **Security & Compliance** | [Threat Model & PRR](docs/security/threat_model.md) | STRIDE analysis, secrets isolation, and least-privilege IAM. |
+| **Testing & SRE** | [Verification Suite](docs/testing/test_strategy.md) | Unit tests, chaos validation, and promtool test vectors. |
+| **Operations** | [Operations Manual](docs/operations/README.md) | Deployment checklists, 15-min demo script, and PRR review. |
+| **Project Governance** | [Completion Report](docs/project/FINAL_PROJECT_COMPLETION_REPORT.md) | Master Phase 1-10 completion report and handover audit. |
+
+---
+
+## Project Completion Status
+
+| Phase | Description | Status | Verification Gate |
+| :---: | :--- | :---: | :--- |
+| **Phase 1** | Application Development | **100% COMPLETE** | 17/17 Pytest passed (93.76% coverage) |
+| **Phase 2** | Docker Containerization | **100% COMPLETE** | Multi-stage build, unprivileged user |
+| **Phase 3** | CI & Security Scanning | **100% COMPLETE** | 0 Gitleaks secrets, 0 CVE vulnerabilities |
+| **Phase 4** | ECR & GitHub OIDC | **100% COMPLETE** | Keyless IAM role federation |
+| **Phase 5** | Terraform Infrastructure | **100% COMPLETE** | 0 drift, locked state, modular IaC |
+| **Phase 6** | Continuous Deployment | **100% COMPLETE** | SSM-based atomic deploy, automated rollback |
+| **Phase 7** | Full Observability Stack | **100% COMPLETE** | Prometheus, Grafana, Node Exp, cAdvisor |
+| **Phase 8** | SRE Engineering | **100% COMPLETE** | 4 Golden Signals, 99.5% SLO, 10 runbooks |
+| **Phase 9** | Frontend Engineering | **100% COMPLETE** | React 18 SPA, 5 views, Chaos Simulator |
+| **Phase 10**| Final Documentation & Delivery| **100% COMPLETE** | 10 doc domains, OpenAPI 3.0, Master Report |
 
 ---
 
 ## License
 
-This project is licensed under the MIT License.
-
----
-
-## Phase 7 & 8: SRE Engineering & Observability
-
-PulseOps incorporates a comprehensive, production-grade SRE framework and observability suite:
-
-### 1. Observability Architecture
-- **Prometheus (v3.0.1)**: Scrapes application telemetry, system metrics, and container metrics at 15s intervals with 15-day TSDB retention.
-- **Node Exporter (v1.8.2)**: Collects kernel, CPU, memory, filesystem, network, and disk I/O metrics from the host.
-- **cAdvisor (v0.49.2)**: Collects container CPU, memory working set, network RX/TX, and filesystem operations via containerd socket integration.
-- **Alertmanager (v0.28.0)**: Manages alerts, deduplication, grouping, and notification routing.
-- **Grafana (v11.4.0)**: Serves pre-provisioned dashboards with secure loopback access.
-
-### 2. Service Level Objectives (SLOs)
-| Objective | Target | Compliance Window | Indicator (SLI) |
-| :--- | :--- | :--- | :--- |
-| **Availability** | $\ge 99.5\%$ | Rolling 30 Days | Successful responses ($200-399$) / total requests |
-| **P95 Latency** | $\ge 95\%$ under $500$ms | Rolling 30 Days | % requests completed $\le 500$ms |
-| **P99 Latency** | $\ge 99\%$ under $1.0$s | Rolling 30 Days | % requests completed $\le 1.0$s |
-| **Deployment Success** | $\ge 95\%$ | Rolling 30 Days | Deployments verified without rollback |
-
-### 3. Error Budget & Burn Rate Governance
-- Allowable Error Budget: **0.5%** ($1.0 - 0.995$).
-- Multi-window burn rate alerts:
-  - **Critical Alert**: $14.4$x burn rate over 2m (consumes 2% of budget in 1 hour).
-  - **Warning Alert**: $3.0$x burn rate over 15m (consumes 5% of budget in 6 hours).
-- Automated Release Policy based on remaining budget state (`docs/sre/error_budget_policy.md`).
-
-### 4. Incident Runbooks & Management
-- Structured incident management (`docs/sre/incident_management.md`) across SEV-1, SEV-2, and SEV-3.
-- 11 production runbooks located in `docs/sre/runbooks/` with diagnostic commands, PromQL expressions, and mitigation steps.
-
-### 5. Secure Remote Access (Port Forwarding)
-All monitoring services are bound strictly to `127.0.0.1` for loopback security. Remote administrator access is achieved via secure SSH or AWS SSM port forwarding:
-
-```bash
-# Securely access Grafana UI locally at http://localhost:3000
-ssh -i project.pem -N -L 3000:127.0.0.1:3000 ubuntu@<EC2_PUBLIC_IP>
-
-# Securely access Prometheus UI locally at http://localhost:9090
-ssh -i project.pem -N -L 9090:127.0.0.1:9090 ubuntu@<EC2_PUBLIC_IP>
-```
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.

@@ -1,0 +1,155 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "PulseOps Core Engine API",
+    "version": "1.0.0",
+    "description": "Enterprise Observability & SRE Workload Microservice API"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8000",
+      "description": "Local / Production Loopback"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Liveness Probe",
+        "responses": {
+          "200": {
+            "description": "Service is healthy"
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "summary": "Readiness Probe",
+        "responses": {
+          "200": {
+            "description": "Service is ready to accept traffic"
+          },
+          "503": {
+            "description": "Service is degraded"
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "summary": "Prometheus Metrics Scrape Target",
+        "responses": {
+          "200": {
+            "description": "Prometheus exposition text"
+          }
+        }
+      }
+    },
+    "/api/v1/overview": {
+      "get": {
+        "summary": "Platform Overview Telemetry",
+        "responses": {
+          "200": {
+            "description": "Combined SLIs and deployment metrics"
+          }
+        }
+      }
+    },
+    "/api/v1/sre/status": {
+      "get": {
+        "summary": "SRE Governance and SLO Compliance",
+        "responses": {
+          "200": {
+            "description": "SLO matrix, error budget and burn rates"
+          }
+        }
+      }
+    },
+    "/api/v1/infrastructure": {
+      "get": {
+        "summary": "Host and Container Fleet Telemetry",
+        "responses": {
+          "200": {
+            "description": "Fleet status and hardware metrics"
+          }
+        }
+      }
+    },
+    "/api/v1/deployments": {
+      "get": {
+        "summary": "Deployment Audit History",
+        "responses": {
+          "200": {
+            "description": "Deployment history log"
+          }
+        }
+      }
+    },
+    "/api/v1/workload": {
+      "get": {
+        "summary": "Simulate Business Workload",
+        "parameters": [
+          {
+            "name": "items",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 5
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Batch processing result"
+          }
+        }
+      }
+    },
+    "/api/v1/simulate-error": {
+      "get": {
+        "summary": "Simulate Injected HTTP Error",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 500
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Simulated 400 Bad Request"
+          },
+          "500": {
+            "description": "Simulated 500 Internal Error"
+          },
+          "503": {
+            "description": "Simulated 503 Outage"
+          }
+        }
+      }
+    },
+    "/api/v1/simulate-latency": {
+      "get": {
+        "summary": "Simulate Injected Latency Delay",
+        "parameters": [
+          {
+            "name": "delay",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "default": 0.2
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Latency injection result"
+          }
+        }
+      }
+    }
+  }
+}
