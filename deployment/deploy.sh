@@ -8,12 +8,14 @@ set -euo pipefail
 # ------------------------------------------------------------------------------
 # 0. Concurrency Control (Host-Level Lock)
 # ------------------------------------------------------------------------------
-LOCK_FILE="/var/lock/pulseops-deploy.lock"
-[ -w "/var/lock" ] 2>/dev/null || LOCK_FILE="/tmp/pulseops-deploy.lock"
-exec 200>"${LOCK_FILE}"
-if ! flock -n 200; then
-    echo "ERROR: Another deployment is already in progress on this host. Aborting." >&2
-    exit 1
+if [ "${PULSEOPS_LOCK_HELD:-0}" != "1" ]; then
+    LOCK_FILE="/var/lock/pulseops-deploy.lock"
+    [ -w "/var/lock" ] 2>/dev/null || LOCK_FILE="/tmp/pulseops-deploy.lock"
+    exec 200>"${LOCK_FILE}"
+    if ! flock -n 200; then
+        echo "ERROR: Another deployment is already in progress on this host. Aborting." >&2
+        exit 1
+    fi
 fi
 
 # ------------------------------------------------------------------------------

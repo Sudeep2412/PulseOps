@@ -138,6 +138,7 @@ echo "Executing deployment script from synchronized worktree: ${TARGET_DEPLOY_SC
 
 export PULSEOPS_DEPLOYMENT_DIR="${TARGET_WORKTREE_DIR}"
 export PULSEOPS_BASE_REPO_DIR="${BASE_REPO_DIR}"
+export PULSEOPS_LOCK_HELD="1"
 
 if ! "${TARGET_DEPLOY_SCRIPT}" "${TARGET_SHA}"; then
     echo "ERROR: Deployment of commit ${TARGET_SHA} failed during execution." >&2
