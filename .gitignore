@@ -70,3 +70,7 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Monitoring environment files
+monitoring/.env*
+!monitoring/.env.example

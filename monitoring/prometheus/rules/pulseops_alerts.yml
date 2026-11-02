@@ -1,0 +1,98 @@
+groups:
+  - name: pulseops_platform_alerts
+    rules:
+      - alert: InstanceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          tier: platform
+        annotations:
+          summary: "Monitored target {{ $labels.instance }} is down"
+          description: "Target {{ $labels.job }} at {{ $labels.instance }} has been unreachable for more than 1 minute."
+          cause: "Service crash, OOM kill, network partition, or failed health probe."
+          remediation: "Inspect container logs using 'docker logs <container>' and verify process liveness."
+
+      - alert: PrometheusTargetDown
+        expr: up{job=~"pulseops-app|node-exporter|cadvisor|alertmanager"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          tier: observability
+        annotations:
+          summary: "Core service {{ $labels.job }} target scrape failed"
+          description: "Prometheus cannot scrape {{ $labels.job }} on {{ $labels.instance }}."
+          cause: "Collector process stopped, crashed, or internal port unreachable."
+          remediation: "Check status of {{ $labels.job }} container via 'docker ps' and check collector logs."
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 5m
+        labels:
+          severity: warning
+          tier: infrastructure
+        annotations:
+          summary: "High host CPU utilization on {{ $labels.instance }}"
+          description: 'Host CPU utilization has exceeded 85% for more than 5 minutes (current value: {{ $value | printf "%.2f" }}%).'
+          cause: "Compute-intensive workload spike, infinite loop, or resource contention."
+          remediation: "Identify top processes using 'top' or 'htop' and check container CPU throttling in cAdvisor."
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          tier: infrastructure
+        annotations:
+          summary: "High host memory utilization on {{ $labels.instance }}"
+          description: 'Host memory utilization has exceeded 85% for more than 5 minutes (current value: {{ $value | printf "%.2f" }}%).'
+          cause: "Memory leak in application, bloated cache, or high concurrent connection load."
+          remediation: "Inspect per-container memory usage with 'docker stats' and review application memory allocation."
+
+      - alert: HighDiskUsage
+        expr: (1 - (node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|overlay"})) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          tier: infrastructure
+        annotations:
+          summary: "Host root filesystem disk usage exceeds 85%"
+          description: 'Disk usage on rootfs is above 85% (current: {{ $value | printf "%.2f" }}%).'
+          cause: "Unrotated container log files, dangling Docker images, or accumulated Prometheus TSDB blocks."
+          remediation: "Run 'docker system prune' or purge older system logs in /var/log."
+
+      - alert: ContainerRestarting
+        expr: changes(container_start_time_seconds{image=~".*pulseops-app.*"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          tier: application
+        annotations:
+          summary: "Application container {{ $labels.name }} restarted recently"
+          description: "PulseOps application container has restarted within the last 5 minutes."
+          cause: "Uncaught Python exception, unhandled crash, or OOM kill."
+          remediation: "Inspect container exit code using 'docker inspect pulseops-core-app' and examine Gunicorn logs."
+
+      - alert: ApplicationHighErrorRate
+        expr: (sum(rate(pulseops_http_errors_total{status=~"5.."}[5m])) / sum(rate(pulseops_http_requests_total[5m])) * 100 > 5) and (sum(rate(pulseops_http_requests_total[5m])) > 0)
+        for: 3m
+        labels:
+          severity: critical
+          tier: application
+        annotations:
+          summary: "High HTTP 5xx error rate in PulseOps application"
+          description: 'HTTP 5xx error rate is above 5% of total requests over the last 5 minutes (current: {{ $value | printf "%.2f" }}%).'
+          cause: "Internal server error, database/dependency timeout, or simulate-error endpoint activity."
+          remediation: "Inspect application error logs with 'docker logs pulseops-core-app' and check error endpoints."
+
+      - alert: ApplicationHighLatency
+        expr: histogram_quantile(0.95, sum(rate(pulseops_http_request_duration_seconds_bucket[5m])) by (le)) > 0.5
+        for: 3m
+        labels:
+          severity: warning
+          tier: application
+        annotations:
+          summary: "P95 HTTP request latency exceeded 500ms"
+          description: 'P95 latency is {{ $value | printf "%.3f" }}s, exceeding the 0.5s threshold.'
+          cause: "CPU saturation, slow backend computation, or simulate-latency testing."
+          remediation: "Inspect slow endpoints, check Gunicorn worker thread pool, and review host load."

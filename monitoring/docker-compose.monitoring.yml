@@ -1,0 +1,186 @@
+services:
+  prometheus:
+    image: prom/prometheus:v3.0.1
+    container_name: pulseops-prometheus
+    restart: unless-stopped
+    ports:
+      # Localhost loopback binding only (no public exposure)
+      - "127.0.0.1:9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--storage.tsdb.retention.size=5GB'
+      - '--web.enable-lifecycle'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+      - pulseops-prometheus-data:/prometheus
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - pulseops-net
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: pulseops-node-exporter
+    restart: unless-stopped
+    ports:
+      # Localhost loopback binding only
+      - "127.0.0.1:9100:9100"
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 64M
+        reservations:
+          cpus: '0.05'
+          memory: 16M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - pulseops-net
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.2
+    container_name: pulseops-cadvisor
+    restart: unless-stopped
+    privileged: true
+    command:
+      - '-containerd=/run/containerd/containerd.sock'
+      - '-containerd-namespace=moby'
+    ports:
+      # Localhost loopback binding only
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /run/containerd/containerd.sock:/run/containerd/containerd.sock:ro
+      - /sys:/sys:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - pulseops-net
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.0
+    container_name: pulseops-alertmanager
+    restart: unless-stopped
+    ports:
+      # Localhost loopback binding only
+      - "127.0.0.1:9093:9093"
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - pulseops-alertmanager-data:/alertmanager
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - pulseops-net
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: pulseops-grafana
+    restart: unless-stopped
+    ports:
+      # Localhost loopback binding only (Remote admin access via SSH/SSM port-forwarding)
+      - "127.0.0.1:3000:3000"
+    env_file:
+      - path: .env.monitoring
+        required: false
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_USERS_AUTO_ASSIGN_ORG_ROLE=Viewer
+      - GF_SERVER_SERVE_FROM_SUB_PATH=false
+      - GF_LOG_MODE=console
+      - GF_LOG_LEVEL=info
+    volumes:
+      - pulseops-grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - pulseops-net
+
+networks:
+  pulseops-net:
+    name: pulseops-network
+    external: true
+
+volumes:
+  pulseops-prometheus-data:
+    name: pulseops-prometheus-data
+  pulseops-grafana-data:
+    name: pulseops-grafana-data
+  pulseops-alertmanager-data:
+    name: pulseops-alertmanager-data
