@@ -13,7 +13,7 @@ It is designed to be copy-paste ready and executable without inspecting source c
 3. [C. Initial Setup](#c-initial-setup)
 4. [D. Running the Project Locally](#d-running-the-project-locally)
 5. [E. Running the Live AWS Production Demo](#e-running-the-live-aws-production-demo)
-6. [F. Recommended 10-Step Demonstration Sequence (8-12 Minutes)](#f-recommended-10-step-demonstration-sequence-812-minutes)
+6. [F. Recommended 10-Step Demonstration Sequence (8–12 Minutes)](#f-recommended-10-step-demonstration-sequence-812-minutes)
 7. [G. Operational Troubleshooting Runbook](#g-operational-troubleshooting-runbook)
 8. [H. Demo Reset & Clean Teardown](#h-demo-reset--clean-teardown)
 9. [I. Quick Reference Cheat Sheet](#i-quick-reference-cheat-sheet)
@@ -99,17 +99,27 @@ PulseOps/
 
 ---
 
-## D. Running the Project Locally
+## D. Running the Project Locally (Fresh PC / Zero Cloud Dependency)
+
+PulseOps provides a single-command local environment that runs identically on Windows, macOS, and Linux without needing AWS credentials, SSM, or cloud infrastructure.
+
+> [!NOTE]
+> For complete step-by-step Windows installation, prerequisites (Docker Desktop + Git), and common issue fixes, refer to [`docs/operations/SETUP_ON_NEW_PC.md`](docs/operations/SETUP_ON_NEW_PC.md).
 
 ### 1. Start Application & Observability Containers
 From the repository root:
-```bash
-# Copy local environment example
-cp .env.example .env
+```powershell
+# On Windows (PowerShell - Recommended):
+.\run-local.ps1
 
-# Start application and all monitoring services in the background
+# On Windows (Command Prompt):
+run-local.bat
+
+# On Linux / macOS (Bash):
+./run-local.sh
+
+# Or directly using native Docker Compose:
 docker compose up -d --build
-docker compose -f monitoring/docker-compose.monitoring.yml up -d
 ```
 
 ### 2. Verify Local Container Health
@@ -127,13 +137,22 @@ Expected output:
 ### 3. Local Web Access URLs
 Open the following URLs in your local browser:
 - **PulseOps Dashboard & REST API**: [http://localhost:8000](http://localhost:8000)
+- **Grafana Dashboards**: [http://localhost:3000](http://localhost:3000) (Login: `admin` / `admin`)
 - **Prometheus TSDB**: [http://localhost:9090](http://localhost:9090)
-- **Grafana Dashboards**: [http://localhost:3000](http://localhost:3000)
 - **Alertmanager**: [http://localhost:9093](http://localhost:9093)
 
-### 4. Stopping the Local Demo
-```bash
-docker compose -f monitoring/docker-compose.monitoring.yml down
+### 4. Stopping the Local Demo Cleanly
+```powershell
+# On Windows (PowerShell):
+.\stop-local.ps1
+
+# On Windows (Command Prompt):
+stop-local.bat
+
+# On Linux / macOS (Bash):
+./stop-local.sh
+
+# Or directly:
 docker compose down
 ```
 
@@ -197,7 +216,7 @@ In each terminal running a port-forwarding command, press `Ctrl+C` to terminate 
 
 ---
 
-## F. Recommended 10-Step Demonstration Sequence (8-12 Minutes)
+## F. Recommended 10-Step Demonstration Sequence (8–12 Minutes)
 
 Follow this scripted progression for presentations and technical evaluations:
 

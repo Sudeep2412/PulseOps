@@ -75,6 +75,6 @@ Thumbs.db
 monitoring/.env*
 !monitoring/.env.example
 
-# Node Exporter textfile collector metrics (runtime generated)
-monitoring/textfile_metrics/*.prom
+# Node Exporter textfile collector metrics (preserve seed metrics)
+!monitoring/textfile_metrics/*.prom
 !monitoring/textfile_metrics/.gitkeep

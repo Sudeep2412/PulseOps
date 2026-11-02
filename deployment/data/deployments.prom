@@ -1,0 +1,13 @@
+# HELP pulseops_deployment_events_total Total deployments executed by status
+# TYPE pulseops_deployment_events_total counter
+pulseops_deployment_events_total{status="success"} 6
+pulseops_deployment_events_total{status="failed"} 0
+pulseops_deployment_events_total{status="rollback"} 0
+
+# HELP pulseops_deployment_last_timestamp_seconds Epoch timestamp of last successful deployment
+# TYPE pulseops_deployment_last_timestamp_seconds gauge
+pulseops_deployment_last_timestamp_seconds{status="success"} 1793657526
+
+# HELP pulseops_deployment_last_duration_seconds Execution duration of last deployment in seconds
+# TYPE pulseops_deployment_last_duration_seconds gauge
+pulseops_deployment_last_duration_seconds 8.0

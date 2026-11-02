@@ -94,11 +94,18 @@ else
     log_fail "Grafana Health" "Grafana /api/health probe failed"
 fi
 
-ENV_FILE="/home/ubuntu/PulseOps/monitoring/.env.monitoring"
-if [ -f "$ENV_FILE" ]; then
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BASE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+ENV_FILE="${BASE_DIR}/monitoring/.env.monitoring"
+GF_PASS="${GRAFANA_ADMIN_PASSWORD:-}"
+if [ -z "$GF_PASS" ] && [ -f "$ENV_FILE" ]; then
     GF_PASS=$(grep '^GRAFANA_ADMIN_PASSWORD=' "$ENV_FILE" | cut -d '=' -f2-)
-    AUTH_HEADER="Basic $(echo -n "admin:${GF_PASS}" | base64)"
-    DASHBOARD_COUNT=$(curl -s -H "Authorization: ${AUTH_HEADER}" "http://127.0.0.1:3000/api/search?type=dash-db" | python3 -c '
+fi
+if [ -z "$GF_PASS" ]; then
+    GF_PASS="admin"
+fi
+AUTH_HEADER="Basic $(echo -n "admin:${GF_PASS}" | base64)"
+DASHBOARD_COUNT=$(curl -s -H "Authorization: ${AUTH_HEADER}" "http://127.0.0.1:3000/api/search?type=dash-db" | python3 -c '
 import sys, json
 try:
     d = json.load(sys.stdin)
@@ -106,13 +113,10 @@ try:
 except Exception:
     print(0)
 ')
-    if [ "$DASHBOARD_COUNT" -ge 4 ]; then
-        log_pass "Grafana pre-provisioned dashboards loaded ($DASHBOARD_COUNT dashboards found)"
-    else
-        log_fail "Grafana Dashboards" "Expected at least 4 dashboards, found $DASHBOARD_COUNT"
-    fi
+if [ "$DASHBOARD_COUNT" -ge 4 ]; then
+    log_pass "Grafana pre-provisioned dashboards loaded ($DASHBOARD_COUNT dashboards found)"
 else
-    log_fail "Grafana Auth" ".env.monitoring not found on host"
+    log_fail "Grafana Dashboards" "Expected at least 4 dashboards, found $DASHBOARD_COUNT"
 fi
 
 # 7. SLI / SLO Recording Rules Query Validity

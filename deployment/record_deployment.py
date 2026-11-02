@@ -11,8 +11,13 @@ import os
 import time
 from datetime import datetime, timezone
 
-BASE_DIR = os.getenv("PULSEOPS_BASE_REPO_DIR", "/home/ubuntu/PulseOps")
-DEPLOYMENTS_DIR = "/home/ubuntu/pulseops-deployments"
+BASE_DIR = os.getenv(
+    "PULSEOPS_BASE_REPO_DIR",
+    "/home/ubuntu/PulseOps" if os.path.exists("/home/ubuntu/PulseOps") else os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+)
+DEPLOYMENTS_DIR = os.getenv("PULSEOPS_DEPLOYMENTS_DIR", "/home/ubuntu/pulseops-deployments")
+if not os.path.exists(DEPLOYMENTS_DIR) and not os.access(os.path.dirname(DEPLOYMENTS_DIR) or ".", os.W_OK):
+    DEPLOYMENTS_DIR = os.path.join(BASE_DIR, "deployment", "data")
 HISTORY_FILE = f"{DEPLOYMENTS_DIR}/deployments_history.jsonl"
 PROM_FILE = f"{BASE_DIR}/monitoring/textfile_metrics/deployments.prom"
 

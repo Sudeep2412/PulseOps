@@ -55,6 +55,52 @@ graph TD
 
 ---
 
+---
+
+## Quickstart: Running on a Fresh PC (Windows / macOS / Linux)
+
+PulseOps is genuinely portable and can be evaluated on any fresh computer **without AWS credentials, SSM, or cloud infrastructure**. The complete platform—including frontend, backend, Prometheus, Grafana, exporters, and Alertmanager—starts locally with a single command:
+
+### 1. Prerequisites
+- [Git](https://git-scm.com/downloads)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (ensure Docker Engine is running)
+
+### 2. Clone & Launch (One Command)
+```powershell
+# Clone the repository
+git clone https://github.com/Sudeep2412/PulseOps.git
+cd PulseOps
+
+# Launch on Windows (PowerShell)
+.\run-local.ps1
+
+# Or on Windows (Command Prompt)
+run-local.bat
+
+# Or using native Docker Compose directly (Windows, macOS, Linux)
+docker compose up -d --build
+```
+
+### 3. Open Web Interfaces
+| Service | Local URL | Default Login | Purpose |
+| :--- | :--- | :---: | :--- |
+| **PulseOps React UI & REST API** | [http://localhost:8000](http://localhost:8000) | *None* | Golden Signals, Workload & Fault Simulator |
+| **Grafana Dashboards** | [http://localhost:3000](http://localhost:3000) | `admin` / `admin` | Deep SRE & Performance Dashboards |
+| **Prometheus TSDB** | [http://localhost:9090](http://localhost:9090) | *None* | Metrics Browser & Recording Rules |
+| **Alertmanager UI** | [http://localhost:9093](http://localhost:9093) | *None* | Live Alert Routing & Silence Policies |
+
+### 4. Stop Cleanly
+```powershell
+.\stop-local.ps1
+# Or: docker compose down
+```
+
+> [!TIP]
+> - For full Windows installation & troubleshooting, see [`docs/operations/SETUP_ON_NEW_PC.md`](docs/operations/SETUP_ON_NEW_PC.md).
+> - For an 8–12 minute live jury presentation script, see [`DEMO_RUNBOOK.md`](DEMO_RUNBOOK.md).
+
+---
+
 ## Key Features
 
 1. **Deterministic Continuous Deployment with Automated Healthcheck Rollback**:

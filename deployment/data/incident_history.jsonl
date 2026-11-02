@@ -1,0 +1,3 @@
+{"incident_id": "INC-001", "timestamp": "2026-11-02T19:52:44Z", "timestamp_epoch": 1793649164, "title": "Core App Container Crash Recovery", "severity": "SEV-1", "duration_seconds": 21.7}
+{"incident_id": "INC-002", "timestamp": "2026-11-02T19:52:44Z", "timestamp_epoch": 1793649164, "title": "Synthetic Error Spike 500 Injection", "severity": "SEV-2", "duration_seconds": 20.2}
+{"incident_id": "INC-003", "timestamp": "2026-11-02T19:52:45Z", "timestamp_epoch": 1793649165, "title": "Latency Saturation Injection Recovery", "severity": "SEV-2", "duration_seconds": 21.1}

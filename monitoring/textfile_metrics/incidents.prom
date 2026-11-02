@@ -1,0 +1,17 @@
+# HELP pulseops_incident_events_total Total recorded resolved incidents
+# TYPE pulseops_incident_events_total counter
+pulseops_incident_events_total{severity="SEV-1"} 1
+pulseops_incident_events_total{severity="SEV-2"} 2
+pulseops_incident_events_total{severity="SEV-3"} 0
+
+# HELP pulseops_incident_recovery_mttr_seconds Mean Time to Recovery in seconds across recorded incidents
+# TYPE pulseops_incident_recovery_mttr_seconds gauge
+pulseops_incident_recovery_mttr_seconds 21.0
+
+# HELP pulseops_incident_last_recovery_seconds Recovery duration of most recent resolved incident
+# TYPE pulseops_incident_last_recovery_seconds gauge
+pulseops_incident_last_recovery_seconds 21.1
+
+# HELP pulseops_incident_count_total Total count of incidents evaluated in MTTR baseline
+# TYPE pulseops_incident_count_total gauge
+pulseops_incident_count_total 3

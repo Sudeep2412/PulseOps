@@ -12,11 +12,15 @@ api_bp = Blueprint("api", __name__, url_prefix="/api/v1")
 def query_prometheus_metric(query_expr: str):
     """Safely queries internal Prometheus service on the Docker bridge or local host."""
     prom_endpoints = [
-        os.getenv("PROMETHEUS_URL", "http://pulseops-prometheus:9090"),
+        os.getenv("PROMETHEUS_URL"),
+        "http://pulseops-prometheus:9090",
+        "http://prometheus:9090",
         "http://127.0.0.1:9090",
         "http://localhost:9090"
     ]
     for endpoint in prom_endpoints:
+        if not endpoint:
+            continue
         try:
             url = f"{endpoint}/api/v1/query"
             resp = requests.get(url, params={"query": query_expr}, timeout=1.5)
@@ -36,6 +40,8 @@ def get_deployments_file():
     candidates = [
         os.getenv("DEPLOYMENTS_HISTORY_FILE"),
         "/app/deployments/deployments_history.jsonl",
+        os.path.abspath("deployment/data/deployments_history.jsonl"),
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", "deployment", "data", "deployments_history.jsonl"),
         "/home/ubuntu/pulseops-deployments/deployments_history.jsonl"
     ]
     for c in candidates:
@@ -48,6 +54,8 @@ def get_incidents_file():
     candidates = [
         os.getenv("INCIDENTS_HISTORY_FILE"),
         "/app/deployments/incident_history.jsonl",
+        os.path.abspath("deployment/data/incident_history.jsonl"),
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", "deployment", "data", "incident_history.jsonl"),
         "/home/ubuntu/pulseops-deployments/incident_history.jsonl"
     ]
     for c in candidates:
@@ -243,7 +251,7 @@ def overview():
 def sre_status():
     """Detailed SRE governance metrics: SLO compliance, error budget policies, and burn rates."""
     avail_sli = query_prometheus_metric("pulseops:sli_availability:ratio_rate5m")
-    latency_compliance_sli = query_prometheus_metric("pulseops:sli_latency_under_500ms:ratio_rate5m")
+    latency_p95_sli = query_prometheus_metric("pulseops:sli_latency_under_500ms:ratio_rate5m")
     budget_rem = query_prometheus_metric("pulseops:error_budget_remaining:percent_5m")
     burn_rate_5m = query_prometheus_metric("pulseops:error_budget_burn_rate:5m")
     mttr = query_prometheus_metric("pulseops_incident_recovery_mttr_seconds")
@@ -278,8 +286,8 @@ def sre_status():
                 "target_percent": 95.0,
                 "threshold_seconds": 0.5,
                 "compliance_window": "Rolling 30 Days",
-                "current_ratio": round(latency_compliance_sli, 4) if latency_compliance_sli is not None else None,
-                "compliant": (latency_compliance_sli >= 0.95) if latency_compliance_sli is not None else True,
+                "current_ratio": round(latency_p95_sli, 4) if latency_p95_sli is not None else None,
+                "compliant": (latency_p95_sli >= 0.95) if latency_p95_sli is not None else True,
                 "description": "Percentage of requests completed within 500ms threshold."
             },
             {
