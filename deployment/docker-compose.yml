@@ -3,7 +3,7 @@ services:
     build:
       context: ..
       dockerfile: deployment/Dockerfile
-    image: pulseops-app:phase2
+    image: ${REGISTRY:-512888109658.dkr.ecr.us-east-1.amazonaws.com}/pulseops-app:${IMAGE_TAG:-latest}
     container_name: pulseops-core-app
     restart: unless-stopped
     ports:

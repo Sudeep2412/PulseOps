@@ -1,0 +1,13 @@
+aws_region                = "us-east-1"
+ami_id                    = "ami-0d97d7f07b25dd693"
+instance_type             = "m7i-flex.large"
+key_name                  = "project"
+availability_zone         = "us-east-1c"
+subnet_id                 = "subnet-0c7dc2e5fa26454f8"
+iam_instance_profile_name = "instanceRoleproj"
+authorized_ssh_cidrs      = [
+  "110.224.84.50/32",
+  "171.79.61.8/32"
+]
+ecr_repository_name       = "pulseops-app"
+github_repository         = "Sudeep2412/PulseOps"
