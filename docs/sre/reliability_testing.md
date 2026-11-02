@@ -13,7 +13,7 @@ PulseOps implements non-destructive, controlled reliability testing to empirical
 | **Scenario 1: Application Failure** | Evaluate crash detection & process MTTR | `docker stop pulseops-core-app` | Prometheus detects `up=0`; MTTR $\le 60$s upon start. |
 | **Scenario 2: Elevated HTTP Errors** | Evaluate 5xx SLI calculation & burn rate | Synthetic HTTP 500 requests via `/api/v1/simulate-error` | `pulseops_http_errors_total` increases; error budget burns. |
 | **Scenario 3: Elevated Latency** | Verify tail latency calculation against SLO | Synthetic delay injection via `/api/v1/simulate-latency` | P95 latency crosses 500ms; SLI gauge degrades. |
-| **Scenario 4: Deployment Guard** | Verify rollback baseline & invalid SHA rejection | Call `deploy.sh` with non-hexadecimal commit SHA | Deployment rejected before pull/restart; zero downtime. |
+| **Scenario 4: Deployment Guard** | Verify rollback baseline & invalid SHA rejection | Call `deploy.sh` with non-hexadecimal commit SHA | Deployment rejected before pull/restart; zero interruption. |
 | **Scenario 5: Monitoring Restart** | Test TSDB retention across collector lifecycle | `docker restart pulseops-prometheus pulseops-grafana` | Readiness probes pass; historical metrics intact. |
 
 ---

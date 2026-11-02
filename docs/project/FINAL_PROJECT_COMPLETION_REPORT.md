@@ -80,7 +80,7 @@ All platform components run as Docker containers connected via an isolated Docke
   - Deterministic Git worktree synchronization matching target commit SHA.
   - Rollback baseline image capture and tag verification.
   - Automated post-deployment health check validation (`/health`) with automatic fallback to previous baseline.
-- **Verification**: 12/12 mock failure tests passed; live zero-downtime deployment verified on AWS EC2.
+- **Verification**: 12/12 mock failure tests passed; live rapid deployment with healthcheck rollback verified on AWS EC2.
 
 ### Phase 7: Full-Stack Observability
 - **Scope**: Production monitoring infrastructure.

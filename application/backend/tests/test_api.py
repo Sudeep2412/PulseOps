@@ -47,12 +47,15 @@ def test_overview_endpoint(client):
     # Verify metric naming accuracy
     slis = data["slis"]
     assert "availability" in slis
+    assert "availability_percent" in slis
     assert "measured_p95_latency_ms" in slis
     assert "latency_slo_compliance_ratio" in slis
     assert "traffic_rps" in slis
     assert "error_rate_percent" in slis
     assert "error_budget_remaining_percent" in slis
     assert "burn_rate" in slis
+    # Verify legacy ambiguous latency_p95 field is completely removed
+    assert "latency_p95" not in slis
     # Verify deployments structure
     deployments = data["deployments"]
     assert "total_successful" in deployments

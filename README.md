@@ -11,7 +11,7 @@
 [![Grafana: 10.4](https://img.shields.io/badge/Grafana-v10.4-F46800?logo=grafana&logoColor=white)](https://grafana.com)
 [![Coverage: 93.8%](https://img.shields.io/badge/Coverage-93.8%25-brightgreen.svg)](docs/testing/test_results.md)
 
-**PulseOps** is a production-engineered, cloud-native DevOps and Site Reliability Engineering (SRE) observability platform built for AWS workloads. It delivers automated keyless CI/CD, deterministic zero-downtime deployment orchestration with automated rollback, deep multi-tier observability (Prometheus, Grafana, Alertmanager, Node Exporter, cAdvisor), multi-window multi-burn-rate SLO alerting, an interactive React 18 dashboard, and a built-in Chaos/Fault Simulator.
+**PulseOps** is a production-engineered, cloud-native DevOps and Site Reliability Engineering (SRE) observability platform built for AWS workloads. It delivers automated keyless CI/CD, deterministic automated deployment orchestration with automated healthcheck rollback (rapid container replacement with brief 1-3s reset window), deep multi-tier observability (Prometheus, Grafana, Alertmanager, Node Exporter, cAdvisor), multi-window multi-burn-rate SLO alerting, an interactive React 18 dashboard, and a built-in Chaos/Fault Simulator.
 
 ---
 
@@ -57,7 +57,7 @@ graph TD
 
 ## Key Features
 
-1. **Deterministic Zero-Downtime CD with Instant Rollback**:
+1. **Deterministic Continuous Deployment with Automated Healthcheck Rollback**:
    - Automated deployment orchestration powered by AWS Systems Manager (SSM) without open SSH ports.
    - Atomic deployment locking (`flock`) prevents concurrent execution collisions.
    - Git worktree synchronization guarantees identical commit deployment.

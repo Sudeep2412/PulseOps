@@ -97,7 +97,7 @@
                         },
                         "traffic_rps": {
                           "type": "number",
-                          "example": 2.33
+                          "example": 2.51
                         },
                         "error_budget_remaining_percent": {
                           "type": "number",
@@ -114,7 +114,7 @@
                       "properties": {
                         "total_successful": {
                           "type": "integer",
-                          "example": 4
+                          "example": 5
                         },
                         "last_deployment": {
                           "type": "object",

@@ -46,7 +46,7 @@ Step-by-step guides for developers and operators:
 Automated pipeline specifications and release automation:
 - [Pipeline Architecture](cicd/pipeline.md): GitHub Actions multi-stage workflow specification.
 - [Pipeline Security](cicd/security.md): Gitleaks secret detection, pip-audit vulnerability scanning.
-- [Deployment Orchestration](cicd/deployment.md): Zero-downtime rolling deployments via AWS SSM.
+- [Deployment Orchestration](cicd/deployment.md): Automated deployment orchestration via AWS SSM with rapid container replacement and automated rollback.
 - [Automated Rollback](cicd/rollback.md): Pre-deployment baseline capture, automated rollback triggers, and validation.
 
 ## 4. Infrastructure as Code (Terraform)

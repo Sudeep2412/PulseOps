@@ -12,7 +12,6 @@ export interface OverviewData {
     availability_percent: number | null;
     measured_p95_latency_ms: number | null;
     latency_slo_compliance_ratio: number | null;
-    latency_p95?: number | null;
     error_rate_percent: number;
     traffic_rps: number;
     error_budget_remaining_percent: number;

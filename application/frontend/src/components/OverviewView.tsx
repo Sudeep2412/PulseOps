@@ -26,7 +26,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ overview, loading, o
     : 'Idle (< 5ms)';
 
   // Latency SLO Compliance (% of requests under 500ms)
-  const latencyComplianceRatio = slis?.latency_slo_compliance_ratio ?? slis?.latency_p95;
+  const latencyComplianceRatio = slis?.latency_slo_compliance_ratio;
   const latencyComplianceDisplay = latencyComplianceRatio !== null && latencyComplianceRatio !== undefined 
     ? `${(latencyComplianceRatio * 100).toFixed(1)}%` 
     : '100.0%';

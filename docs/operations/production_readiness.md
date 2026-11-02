@@ -21,7 +21,7 @@ In accordance with rigorous SRE engineering practices, this document explicitly 
 The following components have been fully engineered, verified by automated tests, and validated in runtime:
 
 1. **Continuous Deployment & Rollback Engine**:
-   - Zero-downtime rolling update orchestration via AWS Systems Manager (SSM) without SSH keys.
+   - Automated update orchestration via AWS Systems Manager (SSM) without SSH keys, featuring rapid container replacement and automated rollback.
    - Atomic concurrency control via mutex file locks (`flock`).
    - Git worktree synchronization matching commit SHAs.
    - Pre-deployment baseline image tagging (`rollback-baseline`) and verification.
@@ -74,6 +74,11 @@ The following capabilities were intentionally excluded from the single-node majo
    - Because all application and monitoring ports are strictly bound to loopback (`127.0.0.1`), an AWS Application Load Balancer (ALB) and AWS WAF are not deployed.
 4. **Relational Database Tier**:
    - No external database (e.g. AWS Aurora PostgreSQL) is provisioned.
+5. **Zero-Downtime Deployment (Single-Container Replacement Boundary)**:
+   - In the single-node Docker Compose architecture without an upstream load balancer or multi-replica connection draining, container updates recreate the `pulseops-core-app` container (`docker compose up -d --no-deps pulseops-app`).
+   - This replacement causes a brief, transient TCP connection reset window of approximately 1 to 3 seconds during container stop and startup.
+   - True zero-downtime rolling deployments require multiple replicas behind an AWS Application Load Balancer with target group health-checking and graceful connection draining (planned for Phase 11 on Amazon EKS).
+   - The current mechanism guarantees **rapid, deterministic container replacement with instant automated healthcheck rollback** rather than zero-loss rolling updates.
 
 ### Tier 4: Recommended Future Work
 Planned roadmap for enterprise distributed production:
@@ -97,7 +102,7 @@ Planned roadmap for enterprise distributed production:
 | Failure Domain | Current Resilience Mechanism | Residual Risk / Impact |
 | :--- | :--- | :--- |
 | **Application Crash** | Docker daemon restart policy (`unless-stopped`); liveness health probe restart. | Brief request interruptions (<5s). |
-| **Defective Deployment** | Automated rollback to `rollback-baseline` image on health check failure. | Zero-downtime recovery; deployment marked failed. |
+| **Defective Deployment** | Automated rollback to `rollback-baseline` image on health check failure. | Rapid container recovery (1-3s restart); active baseline restored; deployment marked failed. |
 | **Host Disk Saturation** | Prometheus 15-day retention; Docker JSON log rotation limits (10MB max). | TSDB write rejection if host disk fills >95%. |
 | **EC2 Hardware Failure** | AWS CloudWatch alarm; manual EC2 instance reboot via SSM. | Unplanned downtime until instance re-initializes. |
 | **AWS AZ Outage** | Single-AZ deployment. | Complete platform outage until AZ recovery. |

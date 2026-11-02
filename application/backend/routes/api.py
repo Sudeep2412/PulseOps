@@ -198,7 +198,7 @@ def overview():
         last_deployment = {
             "timestamp": datetime.fromtimestamp(last_deploy_ts, timezone.utc).isoformat(),
             "timestamp_epoch": int(last_deploy_ts),
-            "commit_sha": os.getenv("CURRENT_COMMIT_SHA", "c4c4074a44dd7bb78be03aaf36744308eafdd284"),
+            "commit_sha": os.getenv("CURRENT_COMMIT_SHA", "latest"),
             "status": "success",
             "duration_seconds": last_deploy_dur if last_deploy_dur is not None else 8.0,
             "source": "prometheus_telemetry"
@@ -225,14 +225,13 @@ def overview():
             "availability_percent": avail_pct,
             "measured_p95_latency_ms": p95_latency_ms,
             "latency_slo_compliance_ratio": round(latency_slo_ratio, 4) if latency_slo_ratio is not None else None,
-            "latency_p95": round(latency_slo_ratio, 4) if latency_slo_ratio is not None else None,  # Backward compatibility
             "error_rate_percent": error_pct,
             "traffic_rps": round(traffic_rps, 2) if traffic_rps is not None else 0.0,
             "error_budget_remaining_percent": round(budget_rem, 2) if budget_rem is not None else 100.0,
             "burn_rate": round(burn_rate, 2) if burn_rate is not None else 0.0
         },
         "deployments": {
-            "total_successful": int(deploy_success) if deploy_success is not None else (len(recent_deployments) or 4),
+            "total_successful": int(deploy_success) if deploy_success is not None else (len(recent_deployments) or 5),
             "last_deployment": last_deployment
         },
         "incidents": {
@@ -244,7 +243,7 @@ def overview():
 def sre_status():
     """Detailed SRE governance metrics: SLO compliance, error budget policies, and burn rates."""
     avail_sli = query_prometheus_metric("pulseops:sli_availability:ratio_rate5m")
-    latency_p95_sli = query_prometheus_metric("pulseops:sli_latency_under_500ms:ratio_rate5m")
+    latency_compliance_sli = query_prometheus_metric("pulseops:sli_latency_under_500ms:ratio_rate5m")
     budget_rem = query_prometheus_metric("pulseops:error_budget_remaining:percent_5m")
     burn_rate_5m = query_prometheus_metric("pulseops:error_budget_burn_rate:5m")
     mttr = query_prometheus_metric("pulseops_incident_recovery_mttr_seconds")
@@ -279,8 +278,8 @@ def sre_status():
                 "target_percent": 95.0,
                 "threshold_seconds": 0.5,
                 "compliance_window": "Rolling 30 Days",
-                "current_ratio": round(latency_p95_sli, 4) if latency_p95_sli is not None else None,
-                "compliant": (latency_p95_sli >= 0.95) if latency_p95_sli is not None else True,
+                "current_ratio": round(latency_compliance_sli, 4) if latency_compliance_sli is not None else None,
+                "compliant": (latency_compliance_sli >= 0.95) if latency_compliance_sli is not None else True,
                 "description": "Percentage of requests completed within 500ms threshold."
             },
             {
@@ -352,14 +351,14 @@ def deployments():
     if not history and last_deploy_ts is not None:
         history = [
             {
-                "commit_sha": os.getenv("CURRENT_COMMIT_SHA", "c4c4074a44dd7bb78be03aaf36744308eafdd284"),
+                "commit_sha": os.getenv("CURRENT_COMMIT_SHA", "latest"),
                 "timestamp": datetime.fromtimestamp(last_deploy_ts, timezone.utc).isoformat(),
                 "duration_seconds": last_deploy_dur if last_deploy_dur is not None else 8.0,
                 "status": "success"
             }
         ]
 
-    current_sha = history[-1]["commit_sha"] if history else os.getenv("CURRENT_COMMIT_SHA", "c4c4074a44dd7bb78be03aaf36744308eafdd284")
+    current_sha = history[-1]["commit_sha"] if history else os.getenv("CURRENT_COMMIT_SHA", "latest")
 
     return jsonify({
         "current_commit_sha": current_sha,

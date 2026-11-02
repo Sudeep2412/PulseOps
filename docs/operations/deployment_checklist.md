@@ -17,7 +17,7 @@ This document details the mandatory verification checklist executed before, duri
 - [ ] **Deployment Locking**: SSM acquires atomic lock `/tmp/pulseops_deploy.lock` on target EC2 instance.
 - [ ] **Git Worktree Sync**: Target commit checked out via detached worktree (`/home/ubuntu/PulseOps-deploy-*`).
 - [ ] **Rollback Baseline Capture**: Existing container image inspected and tagged as `rollback-baseline`.
-- [ ] **Zero-Downtime Rollout**: Docker Compose pulls new image, updates container, and validates `/health` endpoint within 30 seconds.
+- [ ] **Rapid Container Rollout**: Docker Compose pulls new image, updates container, and validates `/health` endpoint within 30 seconds (noting transient ~1-3s container recreation window).
 
 ## 3. Post-Deployment Phase (Verification & SRE)
 - [ ] **Endpoint Health Validation**:
