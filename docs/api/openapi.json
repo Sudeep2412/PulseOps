@@ -50,7 +50,95 @@
         "summary": "Platform Overview Telemetry",
         "responses": {
           "200": {
-            "description": "Combined SLIs and deployment metrics"
+            "description": "Combined SLIs and deployment metrics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "service": {
+                      "type": "string",
+                      "example": "PulseOps"
+                    },
+                    "platform_status": {
+                      "type": "string",
+                      "example": "operational"
+                    },
+                    "environment": {
+                      "type": "string",
+                      "example": "production"
+                    },
+                    "version": {
+                      "type": "string",
+                      "example": "1.0.0"
+                    },
+                    "slis": {
+                      "type": "object",
+                      "properties": {
+                        "availability": {
+                          "type": "number",
+                          "example": 1.0
+                        },
+                        "availability_percent": {
+                          "type": "number",
+                          "example": 100.0
+                        },
+                        "measured_p95_latency_ms": {
+                          "type": "number",
+                          "example": 4.75
+                        },
+                        "latency_slo_compliance_ratio": {
+                          "type": "number",
+                          "example": 1.0
+                        },
+                        "error_rate_percent": {
+                          "type": "number",
+                          "example": 0.0
+                        },
+                        "traffic_rps": {
+                          "type": "number",
+                          "example": 2.33
+                        },
+                        "error_budget_remaining_percent": {
+                          "type": "number",
+                          "example": 100.0
+                        },
+                        "burn_rate": {
+                          "type": "number",
+                          "example": 0.0
+                        }
+                      }
+                    },
+                    "deployments": {
+                      "type": "object",
+                      "properties": {
+                        "total_successful": {
+                          "type": "integer",
+                          "example": 4
+                        },
+                        "last_deployment": {
+                          "type": "object",
+                          "properties": {
+                            "commit_sha": {
+                              "type": "string"
+                            },
+                            "timestamp": {
+                              "type": "string"
+                            },
+                            "duration_seconds": {
+                              "type": "number"
+                            },
+                            "status": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }

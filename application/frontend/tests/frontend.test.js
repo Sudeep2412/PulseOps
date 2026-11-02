@@ -28,6 +28,34 @@ test('SLI availability compliance formatting', () => {
   assert.equal(formatSLI(0.95), '95.00%');
 });
 
+test('Measured P95 latency vs Latency SLO compliance formatting', () => {
+  const formatMeasuredLatency = (ms) => {
+    if (ms === null || ms === undefined) return 'Idle (< 5ms)';
+    return `${ms.toFixed(2)} ms`;
+  };
+
+  const formatLatencyCompliance = (ratio) => {
+    if (ratio === null || ratio === undefined) return '100.0%';
+    return `${(ratio * 100).toFixed(1)}%`;
+  };
+
+  // Measured latency must format in milliseconds
+  assert.equal(formatMeasuredLatency(4.75), '4.75 ms');
+  assert.equal(formatMeasuredLatency(null), 'Idle (< 5ms)');
+
+  // SLO compliance must format as percentage
+  assert.equal(formatLatencyCompliance(1.0), '100.0%');
+  assert.equal(formatLatencyCompliance(0.985), '98.5%');
+  assert.notEqual(formatMeasuredLatency(4.75), formatLatencyCompliance(1.0));
+});
+
+test('Traffic throughput RPS formatting', () => {
+  const formatTraffic = (rps) => `${(rps ?? 0).toFixed(2)} RPS`;
+  assert.equal(formatTraffic(2.326), '2.33 RPS');
+  assert.equal(formatTraffic(0), '0.00 RPS');
+  assert.equal(formatTraffic(null), '0.00 RPS');
+});
+
 test('SLO compliance determination', () => {
   const isCompliant = (ratio, targetPercent) => {
     if (ratio === null) return true; // Idle is compliant
@@ -42,5 +70,5 @@ test('SLO compliance determination', () => {
 
 test('Deployment SHA formatting', () => {
   const truncateSha = (sha) => sha.slice(0, 10);
-  assert.equal(truncateSha('45489f5efc96662fb93c43fef8280f4f53798cf2'), '45489f5efc');
+  assert.equal(truncateSha('c4c4074a44dd7bb78be03aaf36744308eafdd284'), 'c4c4074a44');
 });

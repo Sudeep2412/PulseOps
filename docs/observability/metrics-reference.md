@@ -12,12 +12,19 @@
 
 ## 2. SRE Recording Rules & SLIs
 
-| Rule Name | Type | Expression Summary | Meaning |
-| :--- | :--- | :--- | :--- |
-| `pulseops:sli_availability:ratio_rate5m` | Recording | Ratio of non-5xx user requests over 5m | Live Availability SLI |
-| `pulseops:sli_latency_under_500ms:ratio_rate5m` | Recording | Ratio of user requests $\le 500$ms over 5m | Live Latency SLI |
-| `pulseops:error_budget_remaining:percent_5m` | Recording | Normalized remaining error budget percentage | Error budget balance |
-| `pulseops:error_budget_burn_rate:5m` | Recording | Error rate ratio over allowable budget (0.005) | Live burn rate factor |
+> [!NOTE]
+> **Latency Metric Distinction**:
+> - `pulseops:sli_latency_under_500ms:ratio_rate5m` represents the **Latency SLO Compliance Ratio** (dimensionless ratio $\ge 0.95$), measuring the proportion of user requests completed in $\le 500$ms over a rolling 5-minute window.
+> - The **Actual Measured P95 Latency** is evaluated in seconds (and displayed in milliseconds) via PromQL:
+>   `histogram_quantile(0.95, sum(rate(pulseops_http_request_duration_seconds_bucket[5m])) by (le))`
+
+| Rule Name | Type | Expression Summary | Meaning | Unit |
+| :--- | :--- | :--- | :--- | :--- |
+| `pulseops:sli_availability:ratio_rate5m` | Recording | Ratio of non-5xx user requests over 5m | Live Availability SLI | Ratio (0.0 - 1.0) |
+| `pulseops:sli_latency_under_500ms:ratio_rate5m` | Recording | Ratio of user requests $\le 500$ms over 5m | Latency SLO Compliance | Ratio (0.0 - 1.0) |
+| `pulseops:error_budget_remaining:percent_5m` | Recording | Normalized remaining error budget percentage | Error budget balance | Percent (%) |
+| `pulseops:error_budget_burn_rate:5m` | Recording | Error rate ratio over allowable budget (0.005) | Live burn rate factor | Multiplier factor (x) |
+
 
 ## 3. Durable SRE & Deployment Metrics (Textfile Collector)
 

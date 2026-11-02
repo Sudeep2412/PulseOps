@@ -9,11 +9,16 @@ services:
     ports:
       # Bound to localhost interface for internal validation (no public exposure)
       - "127.0.0.1:8000:8000"
+    volumes:
+      - /home/ubuntu/pulseops-deployments:/app/deployments:ro
     environment:
       - APP_NAME=PulseOps
       - APP_PORT=8000
       - APP_HOST=0.0.0.0
       - ENVIRONMENT=production
+      - CURRENT_COMMIT_SHA=${IMAGE_TAG:-latest}
+      - DEPLOYMENTS_HISTORY_FILE=/app/deployments/deployments_history.jsonl
+      - INCIDENTS_HISTORY_FILE=/app/deployments/incident_history.jsonl
       - LOG_LEVEL=INFO
       - DEBUG=false
       - SECRET_KEY=pulseops-production-secret-demo-token-change-in-vault

@@ -3,13 +3,13 @@ groups:
     interval: 30s
     rules:
       - record: pulseops:error_budget_consumed:percent_5m
-        expr: clamp_min((pulseops:sli_error_rate:ratio_rate5m / 0.005) * 100, 0)
+        expr: round(clamp_min((pulseops:sli_error_rate:ratio_rate5m / 0.005) * 100, 0), 0.001)
 
       - record: pulseops:error_budget_remaining:percent_5m
         expr: clamp_max(clamp_min((1 - (pulseops:sli_error_rate:ratio_rate5m / 0.005)) * 100, 0), 100)
 
       - record: pulseops:error_budget_burn_rate:5m
-        expr: clamp_min(pulseops:sli_error_rate:ratio_rate5m / 0.005, 0)
+        expr: round(clamp_min(pulseops:sli_error_rate:ratio_rate5m / 0.005, 0), 0.001)
 
       - record: pulseops:error_budget_burn_rate:1h
         expr: clamp_min(( (sum(rate(pulseops_http_errors_total{endpoint!~"health\\..*|metrics\\..*",status=~"5.."}[1h])) or (0 * sum(rate(pulseops_http_requests_total{endpoint!~"health\\..*|metrics\\..*"}[1h])))) / sum(rate(pulseops_http_requests_total{endpoint!~"health\\..*|metrics\\..*"}[1h])) and (sum(rate(pulseops_http_requests_total{endpoint!~"health\\..*|metrics\\..*"}[1h])) > 0) ) / 0.005, 0)

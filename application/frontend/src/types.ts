@@ -7,8 +7,14 @@ export interface OverviewData {
   version: string;
   timestamp: string;
   slis: {
-    availability: number | null;
-    latency_p95: number | null;
+    availability?: number | null;
+    availability_ratio?: number | null;
+    availability_percent: number | null;
+    measured_p95_latency_ms: number | null;
+    latency_slo_compliance_ratio: number | null;
+    latency_p95?: number | null;
+    error_rate_percent: number;
+    traffic_rps: number;
     error_budget_remaining_percent: number;
     burn_rate: number;
   };
@@ -96,4 +102,6 @@ export interface DeploymentsData {
   rollback_baseline_tag: string;
   rollback_baseline_available: boolean;
   deployment_history: DeploymentEvent[];
+  total_recorded?: number;
+  status?: string;
 }

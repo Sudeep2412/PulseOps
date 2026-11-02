@@ -44,6 +44,19 @@ def test_overview_endpoint(client):
     assert "platform_status" in data
     assert "slis" in data
     assert "deployments" in data
+    # Verify metric naming accuracy
+    slis = data["slis"]
+    assert "availability" in slis
+    assert "measured_p95_latency_ms" in slis
+    assert "latency_slo_compliance_ratio" in slis
+    assert "traffic_rps" in slis
+    assert "error_rate_percent" in slis
+    assert "error_budget_remaining_percent" in slis
+    assert "burn_rate" in slis
+    # Verify deployments structure
+    deployments = data["deployments"]
+    assert "total_successful" in deployments
+    assert "last_deployment" in deployments
 
 def test_sre_status_endpoint(client):
     response = client.get("/api/v1/sre/status")
@@ -53,6 +66,10 @@ def test_sre_status_endpoint(client):
     assert "error_budget" in data
     assert "incident_metrics" in data
     assert len(data["slo_targets"]) >= 3
+    # Verify SLO target names
+    names = [s["name"] for s in data["slo_targets"]]
+    assert "Availability SLO" in names
+    assert "P95 Latency Compliance SLO" in names
 
 def test_infrastructure_endpoint(client):
     response = client.get("/api/v1/infrastructure")
@@ -69,3 +86,4 @@ def test_deployments_endpoint(client):
     assert "current_commit_sha" in data
     assert "deployment_history" in data
     assert "rollback_baseline_available" in data
+    assert "total_recorded" in data
